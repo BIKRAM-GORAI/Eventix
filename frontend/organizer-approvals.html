@@ -76,7 +76,11 @@
     async function loadPending() {
       try {
         // 1. Get events by this club
-        const eventsRes = await fetch(`http://localhost:5000/api/events/club/${clubId}`);
+        const encodedClubId = encodeURIComponent(clubId);
+        const eventsRes = await fetch(`http://localhost:5000/api/events/club/${encodedClubId}`);
+        if (!eventsRes.ok) {
+          throw new Error("Events fetch failed with status " + eventsRes.status);
+        }
         const events = await eventsRes.json();
 
         if (!Array.isArray(events) || events.length === 0) {
@@ -92,6 +96,7 @@
 
         for (const event of events) {
           const regRes = await fetch(`http://localhost:5000/api/registration/event/${event._id}`);
+          if (!regRes.ok) throw new Error("Registration fetch failed for event " + event._id);
           const regs = await regRes.json();
           if (Array.isArray(regs)) {
             const pending = regs.filter(r => r.approvalStatus === "PENDING");
