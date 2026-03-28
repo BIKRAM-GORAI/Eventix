@@ -86,6 +86,11 @@ const eventSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    clubId: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

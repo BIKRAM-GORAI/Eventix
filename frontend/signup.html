@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up — EventHub</title>
+  <title>Student Sign Up — EventHub</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <div class="auth-wrapper">
     <div class="auth-glow"></div>
-    <div class="auth-card fade-in">
+    <div class="auth-card fade-in" style="max-width: 520px;">
       <div style="text-align:center; margin-bottom: 24px;">
         <a href="index.html" class="navbar-brand" style="justify-content:center; font-size:1.6rem;">⚡ Event<span>Hub</span></a>
+      </div>
+      <div style="display:flex; justify-content:center; margin-bottom:16px;">
+        <span class="badge badge-solo" style="font-size:0.85rem; padding:6px 16px;">🎓 Student Signup</span>
       </div>
       <h2>Create Account</h2>
       <p class="subtitle">Join the campus events community</p>
@@ -21,6 +24,34 @@
         <div class="form-group">
           <label for="name">Full Name</label>
           <input type="text" class="form-input" placeholder="Your full name" name="name" id="name" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dept">Department</label>
+            <input type="text" class="form-input" placeholder="e.g. CSE, ECE" name="dept" id="dept" required>
+          </div>
+          <div class="form-group">
+            <label for="rollNo">Roll Number</label>
+            <input type="text" class="form-input" placeholder="e.g. 21CS101" name="rollNo" id="rollNo" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="collegeId">College ID</label>
+            <input type="text" class="form-input" placeholder="Your college ID" name="collegeId" id="collegeId" required>
+          </div>
+          <div class="form-group">
+            <label for="studyingYear">Studying Year</label>
+            <select class="form-input" name="studyingYear" id="studyingYear" required>
+              <option value="">Select year</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -33,21 +64,10 @@
           <input type="password" class="form-input" placeholder="Create a strong password" name="password" id="signupPass" required>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="college">College</label>
-            <input type="text" class="form-input" placeholder="College name" name="collegeName" id="college" required>
-          </div>
-          <div class="form-group">
-            <label for="phone">Phone</label>
-            <input type="text" class="form-input" placeholder="Phone number" name="phone" id="phone" required>
-          </div>
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="text" class="form-input" placeholder="Your phone number" name="phone" id="phone" required>
         </div>
-
-        <!-- <div class="form-group">
-          <label for="photo">Profile Photo <span style="color: var(--text-muted);">(optional)</span></label>
-          <input type="file" class="form-input" name="profilePhoto" id="photo" style="padding: 10px;">
-        </div> -->
 
         <button type="submit" class="btn btn-primary btn-block btn-lg">Create Account →</button>
       </form>
@@ -55,7 +75,7 @@
       <p id="msg" class="msg"></p>
 
       <div class="auth-footer">
-        Already have an account? <a href="login.html">Login</a>
+        Already have an account? <a href="login.html">Login</a> · <a href="signup-organizer.html">Organizer Signup</a>
       </div>
     </div>
   </div>
@@ -67,30 +87,34 @@
     document.getElementById("signupForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = document.getElementById("msg");
-      const formData = new FormData(e.target);
       const btn = e.target.querySelector("button[type=submit]");
 
       btn.textContent = "Creating account...";
       btn.disabled = true;
 
+      const formData = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("signupEmail").value,
+        password: document.getElementById("signupPass").value,
+        phone: document.getElementById("phone").value,
+        dept: document.getElementById("dept").value,
+        rollNo: document.getElementById("rollNo").value,
+        collegeId: document.getElementById("collegeId").value,
+        studyingYear: document.getElementById("studyingYear").value,
+      };
+
       try {
-        const res = await fetch("http://localhost:5000/api/auth/signup", {
+        const res = await fetch("http://localhost:5000/api/auth/signup/student", {
           method: "POST",
-          body: formData
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
         });
 
-        let data;
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await res.json();
-        } else {
-          const text = await res.text();
-          console.error("Non-JSON response:", text);
-          data = { message: "Server returned an unexpected response" };
-        }
+        const data = await res.json();
 
         if (res.ok && data.userId) {
           localStorage.setItem("pendingUserId", data.userId);
+          localStorage.setItem("pendingRole", "student");
           window.location.href = "verify.html";
         } else {
           msg.innerText = data.message || "Signup failed";
@@ -100,7 +124,7 @@
         }
       } catch (error) {
         console.error("Signup error:", error);
-        msg.innerText = "Error connecting to server. Is the backend running on port 5000?";
+        msg.innerText = "Error connecting to server. Is the backend running?";
         msg.className = "msg msg-error";
         btn.textContent = "Create Account →";
         btn.disabled = false;

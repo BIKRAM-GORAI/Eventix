@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approve Organizers — EventHub Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .organizer-details {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;
+      padding: 14px 16px; background: var(--bg-secondary);
+      border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+      margin: 12px 0;
+    }
+    .organizer-details .detail-item { font-size: 0.85rem; }
+    .organizer-details .detail-label {
+      color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .organizer-details .detail-value { color: var(--text-primary); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="admin-dashboard.html">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>Organizer <span class="highlight">Approvals</span></h1>
+        <p>Review and verify club accounts before they can host events</p>
+      </div>
+    </div>
+
+    <div class="container" style="max-width: 800px; padding-bottom: 80px;">
+      <div id="approvalList">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading pending organizers...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    const role = localStorage.getItem("role");
+
+    if (role !== "admin") {
+      alert("Access denied. Admin login required.");
+      window.location.href = "login-admin.html";
+    }
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+
+    async function loadPending() {
+      try {
+        const res = await fetch("http://localhost:5000/api/admin/pending-organizers");
+        const pending = await res.json();
+        const container = document.getElementById("approvalList");
+
+        if (!Array.isArray(pending) || pending.length === 0) {
+          container.innerHTML = `<div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <p>All caught up! No pending club registrations.</p>
+          </div>`;
+          return;
+        }
+
+        container.innerHTML = "";
+
+        pending.forEach((user, i) => {
+          const div = document.createElement("div");
+          div.className = "approval-item fade-in";
+          div.style.opacity = "0";
+          div.style.transform = "translateY(20px)";
+
+          div.innerHTML = `
+            <div style="flex:1;">
+              <div style="display:flex; gap:8px; margin-bottom:8px;">
+                <span class="badge badge-team">🏢 Club Request</span>
+                <span class="badge badge-pending">⏳ Pending Review</span>
+              </div>
+              <h3 style="font-family:var(--font-display); margin-bottom:4px;">${user.clubName || "Unnamed Club"}</h3>
+              
+              <div class="organizer-details">
+                <div class="detail-item">
+                  <div class="detail-label">Club ID</div>
+                  <div class="detail-value" style="color:var(--orange-accent); font-family:monospace;">${user.clubId || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Applicant Name</div>
+                  <div class="detail-value">${user.name || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Contact Email</div>
+                  <div class="detail-value">${user.email || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Contact Phone</div>
+                  <div class="detail-value">${user.phone || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Applied On</div>
+                  <div class="detail-value">${new Date(user.createdAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-self: flex-start; margin-top: 10px;">
+              <button onclick="approve('${user._id}', this)" class="btn btn-primary btn-sm">Approve ✓</button>
+              <button onclick="reject('${user._id}', this)" class="btn btn-danger btn-sm">Reject ✕</button>
+            </div>
+          `;
+          container.appendChild(div);
+
+          gsap.to(div, { opacity: 1, y: 0, duration: 0.5, delay: i * 0.08, ease: "power3.out" });
+        });
+
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        document.getElementById("approvalList").innerHTML = `<div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <p>Error connecting to server. Is the backend running?</p>
+        </div>`;
+      }
+    }
+
+    async function approve(userId, btn) {
+      if (!confirm("Approve this club? An email notification will be sent immediately.")) return;
+
+      btn.textContent = "⏳";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/admin/approve-organizer/${userId}`, {
+          method: "PUT",
+        });
+
+        if (res.ok) {
+          const item = btn.closest(".approval-item");
+          item.style.transition = "all 0.4s ease";
+          item.style.opacity = "0";
+          item.style.transform = "translateX(40px)";
+          setTimeout(() => {
+            item.remove();
+            if (document.querySelectorAll(".approval-item").length === 0) {
+              document.getElementById("approvalList").innerHTML = `<div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <p>All caught up! No pending club registrations.</p>
+              </div>`;
+            }
+          }, 400);
+        } else {
+          const data = await res.json();
+          alert("Error: " + data.message);
+          btn.textContent = "Approve ✓";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Server error during approval process.");
+        btn.textContent = "Approve ✓";
+        btn.disabled = false;
+      }
+    }
+
+    async function reject(userId, btn) {
+      if (!confirm("Reject this club? Their account will be deleted and an email notification sent.")) return;
+
+      btn.textContent = "⏳";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/admin/reject-organizer/${userId}`, {
+          method: "DELETE",
+        });
+
+        if (res.ok) {
+          const item = btn.closest(".approval-item");
+          item.style.transition = "all 0.4s ease";
+          item.style.opacity = "0";
+          item.style.transform = "translateX(-40px)";
+          setTimeout(() => {
+            item.remove();
+            if (document.querySelectorAll(".approval-item").length === 0) {
+              document.getElementById("approvalList").innerHTML = `<div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <p>All caught up! No pending club registrations.</p>
+              </div>`;
+            }
+          }, 400);
+        } else {
+          const data = await res.json();
+          alert("Error: " + data.message);
+          btn.textContent = "Reject ✕";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Server error during rejection process.");
+        btn.textContent = "Reject ✕";
+        btn.disabled = false;
+      }
+    }
+
+    loadPending();
+  </script>
+</body>
+</html>

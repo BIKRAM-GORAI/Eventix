@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    // ── Common fields ──
     name: {
       type: String,
       required: true,
@@ -18,33 +19,21 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    role: {
-      type: String,
-      enum: ["student", "organizer"],
-      default: "student",
-    },
-
-    profilePhoto: {
-      type: String, // store file path
-    },
-    collegeName: {
-      type: String,
-      required: true,
-    },
-
-    age: {
-      type: Number,
-    },
-
-    gender: {
-      type: String,
-      enum: ["male", "female", "other"],
-    },
-
     phone: {
       type: String,
       required: true,
     },
+
+    role: {
+      type: String,
+      enum: ["student", "organizer"],
+      required: true,
+    },
+
+    profilePhoto: {
+      type: String,
+    },
+
     otp: {
       type: String,
     },
@@ -57,8 +46,39 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // ── Student-only fields ──
+    dept: {
+      type: String,
+    },
+
+    rollNo: {
+      type: String,
+    },
+
+    collegeId: {
+      type: String,
+    },
+
+    studyingYear: {
+      type: Number,
+    },
+
+    // ── Organizer-only fields ──
+    clubName: {
+      type: String,
+    },
+
+    clubId: {
+      type: String,
+    },
+
+    isAdminApproved: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const User = mongoose.model("User", userSchema);

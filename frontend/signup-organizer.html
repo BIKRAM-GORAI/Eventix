@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organizer Sign Up — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-glow"></div>
+    <div class="auth-card fade-in" style="max-width: 480px;">
+      <div style="text-align:center; margin-bottom: 24px;">
+        <a href="index.html" class="navbar-brand" style="justify-content:center; font-size:1.6rem;">⚡ Event<span>Hub</span></a>
+      </div>
+      <div style="display:flex; justify-content:center; margin-bottom:16px;">
+        <span class="badge badge-team" style="font-size:0.85rem; padding:6px 16px;">🏢 Organizer Signup</span>
+      </div>
+      <h2>Register Your Club</h2>
+      <p class="subtitle">Create an organizer account for your college club</p>
+
+      <form id="orgSignupForm">
+        <div class="form-group">
+          <label for="name">Your Full Name</label>
+          <input type="text" class="form-input" placeholder="Your name" name="name" id="name" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="clubName">Club Name</label>
+            <input type="text" class="form-input" placeholder="e.g. Tech Club" name="clubName" id="clubName" required>
+          </div>
+          <div class="form-group">
+            <label for="clubId">Club ID</label>
+            <input type="text" class="form-input" placeholder="e.g. TECHCLUB01" name="clubId" id="clubId" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" class="form-input" placeholder="club@college.edu" name="email" id="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" class="form-input" placeholder="Create a strong password" name="password" id="password" required>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="text" class="form-input" placeholder="Your phone number" name="phone" id="phone" required>
+        </div>
+
+        <div class="notice notice-info" style="margin-bottom: 20px;">
+          <strong>Note:</strong> After email verification, your account will need admin approval before you can login and start creating events.
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Register Club →</button>
+      </form>
+
+      <p id="msg" class="msg"></p>
+
+      <div class="auth-footer">
+        Already registered? <a href="login-organizer.html">Organizer Login</a> · <a href="signup.html">Student Signup</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".auth-card", { opacity: 0, y: 40, duration: 0.8, ease: "power3.out" });
+
+    document.getElementById("orgSignupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      const btn = e.target.querySelector("button[type=submit]");
+
+      btn.textContent = "Registering...";
+      btn.disabled = true;
+
+      const formData = {
+        name: document.getElementById("name").value,
+        clubName: document.getElementById("clubName").value,
+        clubId: document.getElementById("clubId").value,
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+        phone: document.getElementById("phone").value,
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/signup/organizer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.userId) {
+          localStorage.setItem("pendingUserId", data.userId);
+          localStorage.setItem("pendingRole", "organizer");
+          window.location.href = "verify-organizer.html";
+        } else {
+          msg.innerText = data.message || "Signup failed";
+          msg.className = "msg msg-error";
+          btn.textContent = "Register Club →";
+          btn.disabled = false;
+        }
+      } catch (error) {
+        console.error("Signup error:", error);
+        msg.innerText = "Error connecting to server.";
+        msg.className = "msg msg-error";
+        btn.textContent = "Register Club →";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

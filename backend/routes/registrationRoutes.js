@@ -93,6 +93,22 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// 2b. Get registrations for a specific event (Organizer View)
+router.get("/event/:eventId", async (req, res) => {
+  try {
+    const registrations = await Registration.find({ eventId: req.params.eventId })
+      .populate("eventId")
+      .populate("userId", "name email phone dept rollNo collegeId studyingYear")
+      .populate({
+        path: "teamId",
+        populate: { path: "members", select: "name email phone dept rollNo collegeId studyingYear" }
+      });
+    res.json(registrations);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // 3. Get User's Specific Events (Student Dashboard)
 router.get("/user/:userId", async (req, res) => {
   try {

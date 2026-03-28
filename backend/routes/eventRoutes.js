@@ -1,5 +1,5 @@
 import express from "express";
-import { createEvent, getAllEvents } from "../controllers/eventController.js";
+import { createEvent, getAllEvents, getEventsByClub } from "../controllers/eventController.js";
 import Event from "../models/Event.js";
 import Registration from "../models/Registration.js";
 import Team from "../models/Team.js";
@@ -13,6 +13,9 @@ router.post("/create", createEvent);
 
 // get all events (students)
 router.get("/", getAllEvents);
+
+// get events by club ID (organizer dashboard)
+router.get("/club/:clubId", getEventsByClub);
 
 // get single event by ID
 router.get("/:id", async (req, res) => {

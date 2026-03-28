@@ -12,6 +12,7 @@ import attendanceRoutes from "./routes/attendanceRoutes.js";
 import path from "path";
 import ticketRoutes from "./routes/ticketRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 
 dotenv.config();
@@ -41,6 +42,7 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/ticket", ticketRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Global error handler (Express 5 compatible)
 app.use((err, req, res, next) => {

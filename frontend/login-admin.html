@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Login — EventHub</title>
+  <title>Admin Login — EventHub</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,27 +15,27 @@
         <a href="index.html" class="navbar-brand" style="justify-content:center; font-size:1.6rem;">⚡ Event<span>Hub</span></a>
       </div>
       <div style="display:flex; justify-content:center; margin-bottom:16px;">
-        <span class="badge badge-solo" style="font-size:0.85rem; padding:6px 16px;">🎓 Student Login</span>
+        <span class="badge badge-approved" style="font-size:0.85rem; padding:6px 16px;">🛡️ Admin Login</span>
       </div>
-      <h2>Welcome Back</h2>
-      <p class="subtitle">Login to access your events and tickets</p>
+      <h2>Admin Panel</h2>
+      <p class="subtitle">System administration access</p>
 
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" class="form-input" placeholder="you@college.edu">
+        <label for="email">Admin Email</label>
+        <input type="email" id="email" class="form-input" placeholder="admin@college.edu">
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" class="form-input" placeholder="Enter your password">
+        <input type="password" id="password" class="form-input" placeholder="Admin password">
       </div>
 
-      <button onclick="login()" class="btn btn-primary btn-block btn-lg" id="loginBtn">Login →</button>
+      <button onclick="login()" class="btn btn-primary btn-block btn-lg" id="loginBtn">Login as Admin →</button>
 
       <p id="msg" class="msg"></p>
 
       <div class="auth-footer">
-        Don't have an account? <a href="signup.html">Sign Up</a> · <a href="login-organizer.html">Organizer Login</a>
+        <a href="login.html">Student Login</a> · <a href="login-organizer.html">Organizer Login</a>
       </div>
     </div>
   </div>
@@ -54,7 +54,7 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch("http://localhost:5000/api/auth/login/student", {
+        const res = await fetch("http://localhost:5000/api/auth/login/admin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -64,19 +64,19 @@
 
         if (res.ok && data.message.includes("Login successful")) {
           localStorage.setItem("userId", data.user._id);
-          localStorage.setItem("role", "student");
+          localStorage.setItem("role", "admin");
           localStorage.setItem("userName", data.user.name);
-          window.location.href = "events.html";
+          window.location.href = "admin-dashboard.html";
         } else {
-          msg.innerText = data.message || "Login failed";
+          msg.innerText = data.message || "Invalid admin credentials";
           msg.className = "msg msg-error";
-          btn.textContent = "Login →";
+          btn.textContent = "Login as Admin →";
           btn.disabled = false;
         }
       } catch (error) {
         msg.innerText = "Error connecting to server.";
         msg.className = "msg msg-error";
-        btn.textContent = "Login →";
+        btn.textContent = "Login as Admin →";
         btn.disabled = false;
       }
     }

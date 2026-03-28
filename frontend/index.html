@@ -6,7 +6,62 @@
   <meta name="description" content="College Event Management System — Discover, register, and participate in campus events.">
   <title>EventHub — College Event Management</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.css">
+  <style>
+    /* Role Selection Modal */
+    .role-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(12px); z-index: 3000; justify-content: center; align-items: center;
+      padding: 20px;
+    }
+    .role-overlay.active { display: flex; }
+
+    .role-modal {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 500px;
+      position: relative; text-align: center;
+    }
+    .role-modal h2 {
+      font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 8px;
+    }
+    .role-modal .subtitle {
+      color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px;
+    }
+    .role-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;
+    }
+    .role-close:hover { color: var(--text-primary); }
+
+    .role-cards {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .role-card {
+      display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); cursor: pointer;
+      transition: all var(--transition-fast); text-align: left;
+    }
+    .role-card:hover {
+      border-color: var(--green-primary); background: rgba(0,255,65,0.03);
+      transform: translateX(4px); box-shadow: var(--shadow-green);
+    }
+    .role-card .role-icon {
+      font-size: 2rem; width: 50px; height: 50px; display: flex; align-items: center;
+      justify-content: center; background: rgba(0,255,65,0.06); border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .role-card .role-info h3 {
+      font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 2px;
+    }
+    .role-card .role-info p {
+      font-size: 0.85rem; color: var(--text-muted); margin: 0;
+    }
+    .role-card .role-arrow {
+      margin-left: auto; color: var(--text-muted); font-size: 1.2rem;
+      transition: transform var(--transition-fast);
+    }
+    .role-card:hover .role-arrow { transform: translateX(4px); color: var(--green-primary); }
+  </style>
 </head>
 <body>
 
@@ -15,8 +70,8 @@
     <div class="navbar-inner">
       <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
       <div class="navbar-links">
-        <button onclick="goLogin()" class="btn btn-secondary btn-sm">Login</button>
-        <button onclick="goSignup()" class="btn btn-primary btn-sm">Sign Up</button>
+        <button onclick="openModal('loginModal')" class="btn btn-secondary btn-sm">Login</button>
+        <button onclick="openModal('signupModal')" class="btn btn-primary btn-sm">Sign Up</button>
       </div>
     </div>
   </nav>
@@ -35,8 +90,8 @@
       </h1>
       <p>Register for solo or team events, receive QR-based tickets, and check in seamlessly. Your complete college event management solution.</p>
       <div class="btn-group">
-        <button onclick="goSignup()" class="btn btn-primary btn-lg">Get Started →</button>
-        <button onclick="goLogin()" class="btn btn-secondary btn-lg">Login</button>
+        <button onclick="openModal('signupModal')" class="btn btn-primary btn-lg">Get Started →</button>
+        <button onclick="openModal('loginModal')" class="btn btn-secondary btn-lg">Login</button>
       </div>
     </div>
   </section>
@@ -103,15 +158,15 @@
           <h4>Quick Links</h4>
           <ul class="footer-links">
             <li><a href="events.html">Browse Events</a></li>
-            <li><a href="signup.html">Create Account</a></li>
-            <li><a href="login.html">Login</a></li>
+            <li><a href="#" onclick="openModal('signupModal')">Create Account</a></li>
+            <li><a href="#" onclick="openModal('loginModal')">Login</a></li>
           </ul>
         </div>
         <div>
           <h4>For Organizers</h4>
           <ul class="footer-links">
-            <li><a href="login.html">Admin Login</a></li>
-            <li><a href="admin-dashboard.html">Dashboard</a></li>
+            <li><a href="login-organizer.html">Organizer Login</a></li>
+            <li><a href="login-admin.html">Admin Login</a></li>
           </ul>
         </div>
       </div>
@@ -121,55 +176,122 @@
     </div>
   </footer>
 
+  <!-- ═══ SIGNUP MODAL ═══ -->
+  <div class="role-overlay" id="signupModal">
+    <div class="role-modal">
+      <button class="role-close" onclick="closeModal('signupModal')">✕</button>
+      <h2>Create Account</h2>
+      <p class="subtitle">Choose your role to get started</p>
+      <div class="role-cards">
+        <div class="role-card" onclick="window.location.href='signup.html'">
+          <div class="role-icon">🎓</div>
+          <div class="role-info">
+            <h3>Student</h3>
+            <p>Browse & register for campus events</p>
+          </div>
+          <span class="role-arrow">→</span>
+        </div>
+        <div class="role-card" onclick="window.location.href='signup-organizer.html'">
+          <div class="role-icon">🏢</div>
+          <div class="role-info">
+            <h3>Organizer (Club)</h3>
+            <p>Create & manage events for your club</p>
+          </div>
+          <span class="role-arrow">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ LOGIN MODAL ═══ -->
+  <div class="role-overlay" id="loginModal">
+    <div class="role-modal">
+      <button class="role-close" onclick="closeModal('loginModal')">✕</button>
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Choose how you'd like to login</p>
+      <div class="role-cards">
+        <div class="role-card" onclick="window.location.href='login.html'">
+          <div class="role-icon">🎓</div>
+          <div class="role-info">
+            <h3>Student</h3>
+            <p>Access your events & tickets</p>
+          </div>
+          <span class="role-arrow">→</span>
+        </div>
+        <div class="role-card" onclick="window.location.href='login-organizer.html'">
+          <div class="role-icon">🏢</div>
+          <div class="role-info">
+            <h3>Organizer (Club)</h3>
+            <p>Manage your club's events</p>
+          </div>
+          <span class="role-arrow">→</span>
+        </div>
+        <div class="role-card" onclick="window.location.href='login-admin.html'">
+          <div class="role-icon">🛡️</div>
+          <div class="role-info">
+            <h3>Admin</h3>
+            <p>System administration panel</p>
+          </div>
+          <span class="role-arrow">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script>
-    function goSignup() { window.location.href = "signup.html"; }
-    function goLogin() { window.location.href = "login.html"; }
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+      gsap.fromTo(document.querySelector(`#${id} .role-modal`), 
+        { opacity: 0, scale: 0.92 }, 
+        { opacity: 1, scale: 1, duration: 0.35, ease: "power3.out" }
+      );
+      gsap.fromTo(document.querySelectorAll(`#${id} .role-card`), 
+        { opacity: 0, x: -20 }, 
+        { opacity: 1, x: 0, duration: 0.4, stagger: 0.08, delay: 0.15, ease: "power3.out" }
+      );
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    // ── Locomotive Scroll ──
-    const scroll = new LocomotiveScroll({
-      el: document.querySelector('body'),
-      smooth: true,
-      smartphone: { smooth: true },
-      tablet: { smooth: true }
+    // Close on backdrop click
+    document.querySelectorAll('.role-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
     });
 
-    // ── GSAP Animations ──
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.role-overlay.active').forEach(o => o.classList.remove('active'));
+      }
+    });
+
+    // GSAP Animations
     gsap.registerPlugin(ScrollTrigger);
 
-    // Hero entrance
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
     tl.from(".hero-badge", { opacity: 0, y: 30, duration: 0.8, delay: 0.3 })
       .from(".hero h1 .line", { opacity: 0, y: 50, duration: 0.8, stagger: 0.15 }, "-=0.4")
       .from(".hero p", { opacity: 0, y: 30, duration: 0.7 }, "-=0.4")
       .from(".hero .btn-group", { opacity: 0, y: 30, duration: 0.7 }, "-=0.3");
 
-    // Feature cards
     gsap.utils.toArray(".feature-card").forEach((card, i) => {
       gsap.from(card, {
         scrollTrigger: { trigger: card, start: "top 85%", toggleActions: "play none none none" },
-        opacity: 0,
-        y: 60,
-        duration: 0.8,
-        delay: i * 0.15
+        opacity: 0, y: 60, duration: 0.8, delay: i * 0.15
       });
     });
 
-    // Stat cards
     gsap.utils.toArray(".stat-card").forEach((card, i) => {
       gsap.from(card, {
         scrollTrigger: { trigger: card, start: "top 85%", toggleActions: "play none none none" },
-        opacity: 0,
-        scale: 0.9,
-        duration: 0.6,
-        delay: i * 0.12
+        opacity: 0, scale: 0.9, duration: 0.6, delay: i * 0.12
       });
     });
 
-    // ── Counter Animation ──
     function animateCounter(el, target, duration = 2000) {
       let start = 0;
       const step = (timestamp) => {
@@ -192,7 +314,6 @@
       once: true
     });
 
-    // ── Floating Particles ──
     const particlesContainer = document.getElementById("particles");
     for (let i = 0; i < 30; i++) {
       const p = document.createElement("div");
@@ -205,7 +326,6 @@
       particlesContainer.appendChild(p);
     }
 
-    // ── Navbar scroll effect ──
     window.addEventListener("scroll", () => {
       const nav = document.getElementById("mainNav");
       nav.style.borderBottomColor = window.scrollY > 50 ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)";

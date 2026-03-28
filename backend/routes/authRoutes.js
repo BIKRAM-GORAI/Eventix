@@ -1,33 +1,37 @@
 import express from "express";
-import { signup, login } from "../controllers/authController.js";
+import {
+  studentSignup,
+  organizerSignup,
+  verifyOTP,
+  resendOTP,
+  studentLogin,
+  organizerLogin,
+  adminLogin,
+} from "../controllers/authController.js";
 import upload from "../utils/cloudinaryUpload.js";
-import { verifyOTP } from "../controllers/authController.js";
-import { resendOTP } from "../controllers/authController.js";
-
 
 const router = express.Router();
 
-// signup — handle file upload errors gracefully (photo is optional)
-router.post("/signup", (req, res, next) => {
+// ── Signup routes ──
+router.post("/signup/student", (req, res, next) => {
   upload.single("profilePhoto")(req, res, (err) => {
     if (err) {
-      // Cloudinary/multer errors are often non-Error objects → [object Object]
-      const errMsg = err instanceof Error
-        ? err.message
-        : (typeof err === "string" ? err : JSON.stringify(err));
-      console.error("Multer/Cloudinary error in signup:", errMsg);
-
-      // Don't block signup for upload failures — continue without photo
-      console.log("⚠️ Continuing signup without profile photo due to upload error");
+      console.error("Upload error:", err);
       req.file = null;
     }
     next();
   });
-}, signup);
+}, studentSignup);
 
-// login
-router.post("/login", login);
+router.post("/signup/organizer", organizerSignup);
+
+// ── OTP routes ──
 router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
+
+// ── Login routes ──
+router.post("/login/student", studentLogin);
+router.post("/login/organizer", organizerLogin);
+router.post("/login/admin", adminLogin);
 
 export default router;

@@ -65,6 +65,7 @@
           msg.innerText = "✅ Verification successful!";
           msg.className = "msg msg-success";
           localStorage.removeItem("pendingUserId");
+          localStorage.removeItem("pendingRole");
           setTimeout(() => { window.location.href = "login.html"; }, 1500);
         } else {
           msg.innerText = data.message;

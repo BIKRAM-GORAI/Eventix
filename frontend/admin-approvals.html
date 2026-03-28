@@ -69,13 +69,62 @@
         container.innerHTML = "";
 
         pending.forEach((reg, i) => {
-          const registrantName = reg.userId ? reg.userId.name : "Unknown User";
-          const registrantEmail = reg.userId ? reg.userId.email : "No Email";
-          const eventTitle = reg.eventId ? reg.eventId.title : "Deleted Event";
+          const user = reg.userId;
+          const isTeam = !!reg.teamId;
 
-          const typeHTML = reg.teamId
-            ? `<span class="badge badge-team">👥 ${reg.teamId.teamName || 'Team'}</span>`
-            : `<span class="badge badge-solo">👤 Solo</span>`;
+          // Build student details
+          let detailsHTML = "";
+          if (user) {
+            detailsHTML = `
+              <div class="student-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; padding: 14px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin: 12px 0;">
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Name</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.name || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Email</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.email || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Phone</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.phone || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Department</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.dept || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Roll No</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.rollNo || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">College ID</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.collegeId || "—"}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Year</div>
+                  <div class="detail-value" style="font-weight: 500;">${user.studyingYear ? "Year " + user.studyingYear : "—"}</div>
+                </div>
+              </div>
+            `;
+          }
+
+          // Team members
+          let teamHTML = "";
+          if (isTeam && reg.teamId && reg.teamId.members) {
+            teamHTML = `<div style="margin: 8px 0;">
+              <div style="font-size:0.85rem; color:var(--purple-accent); font-weight:600; margin-bottom:6px;">
+                👥 Team: ${reg.teamId.teamName || "Unnamed"} (${reg.teamId.members.length} members)
+              </div>
+              ${reg.teamId.members.map(m => `
+                <div class="team-member-card" style="padding: 10px 14px; background: rgba(139,92,246,0.04); border: 1px solid rgba(139,92,246,0.12); border-radius: var(--radius-sm); margin-bottom: 6px;">
+                  <div class="member-name" style="font-weight: 600; font-size: 0.9rem;">${m.name}</div>
+                  <div class="member-detail" style="font-size: 0.8rem; color: var(--text-muted);">${m.email} · ${m.dept || ""} · ${m.rollNo || ""} · ${m.collegeId || ""}</div>
+                </div>
+              `).join("")}
+            </div>`;
+          }
+          const eventTitle = reg.eventId ? reg.eventId.title : "Deleted Event";
 
           const div = document.createElement("div");
           div.className = "approval-item";
@@ -85,15 +134,14 @@
           div.innerHTML = `
             <div class="approval-info" style="flex:1;">
               <div style="display:flex; gap:8px; margin-bottom:8px;">
-                ${typeHTML}
+                ${isTeam ? `<span class="badge badge-team">👥 Team</span>` : `<span class="badge badge-solo">👤 Solo</span>`}
                 <span class="badge badge-pending">⏳ Pending</span>
               </div>
-              <h3>${eventTitle}</h3>
-              <p style="margin-top:4px;">
-                <strong>${registrantName}</strong> · ${registrantEmail}
-              </p>
+              <h3 style="font-family:var(--font-display); margin-bottom:4px;">${eventTitle}</h3>
+              ${detailsHTML}
+              ${teamHTML}
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px; align-self: flex-start;">
               <button onclick="approve('${reg._id}', this)" class="btn btn-primary btn-sm">Approve ✓</button>
             </div>
           `;
