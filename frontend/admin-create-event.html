@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Event — EventHub Admin</title>
+  <title>Create Event — EventHub Organizer</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <nav class="navbar">
     <div class="navbar-inner">
-      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <a href="organizer-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-team" style="font-size:0.7rem; margin-left:8px;">ORGANIZER</span></a>
       <div class="navbar-links">
-        <a href="admin-dashboard.html">← Dashboard</a>
+        <a href="organizer-dashboard.html">← Dashboard</a>
       </div>
     </div>
   </nav>
@@ -27,9 +27,15 @@
         </div>
 
         <form id="eventForm">
-          <div class="form-group">
-            <label>Event Title *</label>
-            <input type="text" name="title" class="form-input" placeholder="e.g. Annual Hackathon 2026" required>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Event Title *</label>
+              <input type="text" name="title" class="form-input" placeholder="e.g. Annual Hackathon 2026" required>
+            </div>
+            <div class="form-group">
+              <label>Club ID *</label>
+              <input type="text" name="clubId" id="clubIdInput" class="form-input" placeholder="e.g. CSE_CLUB" required readonly>
+            </div>
           </div>
 
           <div class="form-group">
@@ -147,6 +153,12 @@
       return `${h12}:${m} ${ampm}`;
     }
 
+    // Auto-fill Club ID
+    const storedClubId = localStorage.getItem("clubId");
+    if (storedClubId) {
+      document.getElementById("clubIdInput").value = storedClubId;
+    }
+
     document.getElementById("eventForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = document.getElementById("msg");
@@ -181,6 +193,7 @@
         rules: formData.get("rules"),
         maxParticipants: formData.get("maxParticipants") ? Number(formData.get("maxParticipants")) : undefined,
         createdBy: adminId,
+        clubId: formData.get("clubId")
       };
 
       try {
@@ -195,7 +208,7 @@
         if (res.ok) {
           msg.innerText = "✅ Event Created Successfully!";
           msg.className = "msg msg-success";
-          setTimeout(() => { window.location.href = "admin-dashboard.html"; }, 1500);
+          setTimeout(() => { window.location.href = "organizer-dashboard.html"; }, 1500);
         } else {
           msg.innerText = data.message;
           msg.className = "msg msg-error";

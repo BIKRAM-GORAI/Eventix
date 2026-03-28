@@ -22,67 +22,19 @@
     <div class="page-header">
       <div class="page-header-glow"></div>
       <div class="container">
-        <h1>🛡️ Command <span class="highlight">Center</span></h1>
-        <p>Manage events, approve registrations, and scan tickets</p>
+        <h1>🛡️ Admin <span class="highlight">Portal</span></h1>
+        <p>Review and approve pending club organizers</p>
       </div>
     </div>
 
     <div class="container" style="max-width: 960px; padding-bottom: 80px;">
-      <div class="admin-grid">
-        <!-- Create Event -->
-        <div class="admin-card fade-in stagger-1" onclick="window.location.href='admin-create-event.html'" style="cursor:pointer;">
-          <div class="card-icon">📝</div>
-          <h3>Create Event</h3>
-          <p>Post new events, set fees, team sizes, and venue details.</p>
-          <button class="btn btn-primary btn-block">Create New Event →</button>
-        </div>
-
-        <!-- Approvals -->
-        <div class="admin-card fade-in stagger-2" onclick="window.location.href='admin-approvals.html'" style="cursor:pointer;">
-          <div class="card-icon">✅</div>
-          <h3>Approvals</h3>
-          <p>Review and approve pending student registrations.</p>
-          <button class="btn btn-outline-green btn-block">Review Pending →</button>
-        </div>
-
-        <!-- Scanner -->
-        <div class="admin-card fade-in stagger-3" onclick="window.location.href='admin-scanner.html'" style="cursor:pointer;">
-          <div class="card-icon">📷</div>
-          <h3>QR Scanner</h3>
-          <p>Scan participant QR codes at the event gate for check-in.</p>
-          <button class="btn btn-secondary btn-block">Open Scanner →</button>
-        </div>
-
-        <!-- Attendance Analytics -->
-        <div class="admin-card fade-in stagger-4" onclick="window.location.href='admin-attendance.html'" style="cursor:pointer;">
-          <div class="card-icon">📊</div>
-          <h3>Attendance</h3>
-          <p>View event-wise check-in data, team stats, and attendance rates.</p>
-          <button class="btn btn-secondary btn-block">View Analytics →</button>
-        </div>
-
-        <!-- Manage Events -->
-        <div class="admin-card fade-in stagger-5" onclick="window.location.href='admin-manage-events.html'" style="cursor:pointer;">
-          <div class="card-icon">🛠️</div>
-          <h3>Manage Events</h3>
-          <p>Edit event details, view participants, conclude events, and send notifications.</p>
-          <button class="btn btn-secondary btn-block">Manage Events →</button>
-        </div>
-
+      <div class="admin-grid" style="grid-template-columns: 1fr; max-width: 500px; margin: 0 auto;">
         <!-- Approve Organizers -->
-        <div class="admin-card fade-in stagger-6" onclick="window.location.href='admin-approve-organizers.html'" style="cursor:pointer;">
+        <div class="admin-card fade-in stagger-1" onclick="window.location.href='admin-approve-organizers.html'" style="cursor:pointer;">
           <div class="card-icon">🏢</div>
           <h3>Approve Organizers</h3>
           <p>Review and approve new club accounts that have requested organizer access.</p>
           <button class="btn btn-outline-green btn-block">Review Organizers →</button>
-        </div>
-
-        <!-- Payment Analytics -->
-        <div class="admin-card fade-in stagger-7" onclick="window.location.href='admin-payments.html'" style="cursor:pointer;">
-          <div class="card-icon">💰</div>
-          <h3>Payment Analytics</h3>
-          <p>Track revenue, view transactions, and analyze payment data across events.</p>
-          <button class="btn btn-secondary btn-block">View Analytics →</button>
         </div>
       </div>
     </div>
