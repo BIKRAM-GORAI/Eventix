@@ -44,10 +44,10 @@
           </div>
         </div>
 
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label for="photo">Profile Photo <span style="color: var(--text-muted);">(optional)</span></label>
           <input type="file" class="form-input" name="profilePhoto" id="photo" style="padding: 10px;">
-        </div>
+        </div> -->
 
         <button type="submit" class="btn btn-primary btn-block btn-lg">Create Account →</button>
       </form>
@@ -79,7 +79,15 @@
           body: formData
         });
 
-        const data = await res.json();
+        let data;
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          console.error("Non-JSON response:", text);
+          data = { message: "Server returned an unexpected response" };
+        }
 
         if (res.ok && data.userId) {
           localStorage.setItem("pendingUserId", data.userId);
@@ -91,7 +99,8 @@
           btn.disabled = false;
         }
       } catch (error) {
-        msg.innerText = "Error connecting to server";
+        console.error("Signup error:", error);
+        msg.innerText = "Error connecting to server. Is the backend running on port 5000?";
         msg.className = "msg msg-error";
         btn.textContent = "Create Account →";
         btn.disabled = false;

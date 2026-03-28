@@ -72,6 +72,15 @@ const eventSchema = new mongoose.Schema(
       type: String,
     },
 
+    isConcluded: {
+      type: Boolean,
+      default: false,
+    },
+
+    concludedAt: {
+      type: Date,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

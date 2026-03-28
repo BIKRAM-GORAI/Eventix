@@ -86,9 +86,9 @@ export const registerForEvent = async (req, res) => {
     let amount = event.price || 0;
     let approvalStatus = "PENDING";
 
-    // 3. 💳 Payment Simulation
+    // 3. 💳 Payment Logic — PENDING until actually paid via payment flow
     if (event.price > 0) {
-      paymentStatus = "SUCCESS"; // Simulated successful payment
+      paymentStatus = "PENDING"; // Will be set to SUCCESS after payment
     } else {
       paymentStatus = "FREE";
     }

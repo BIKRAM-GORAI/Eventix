@@ -11,6 +11,7 @@ import organizerRoutes from "./routes/organizerRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import path from "path";
 import ticketRoutes from "./routes/ticketRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 
 dotenv.config();
@@ -24,6 +25,7 @@ const app = express();
 // middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // test route
 app.get("/", (req, res) => {
@@ -38,6 +40,38 @@ app.use("/api/organizer", organizerRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/ticket", ticketRoutes);
+app.use("/api/payment", paymentRoutes);
+
+// Global error handler (Express 5 compatible)
+app.use((err, req, res, next) => {
+  console.error("🔥 Global error:", err);
+  
+  // If headers have already been sent, delegate to Express's default error handler
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const statusCode = err.status || err.statusCode || 500;
+  
+  // Extract error message safely if err is not an instance of Error
+  let errorMessage = "Internal server error";
+  if (err.message) {
+    errorMessage = err.message;
+  } else if (typeof err === "string") {
+    errorMessage = err;
+  } else {
+    try {
+      errorMessage = JSON.stringify(err);
+    } catch (e) {
+      errorMessage = "Unknown object error";
+    }
+  }
+
+  res.status(statusCode).json({
+    message: errorMessage,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack })
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 

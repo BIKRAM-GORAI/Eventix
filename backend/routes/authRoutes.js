@@ -7,10 +7,23 @@ import { resendOTP } from "../controllers/authController.js";
 
 const router = express.Router();
 
-// app.use("/uploads", express.static("uploads"));
-// signup
-// router.post("/signup", signup);
-router.post("/signup", upload.single("profilePhoto"), signup);
+// signup — handle file upload errors gracefully (photo is optional)
+router.post("/signup", (req, res, next) => {
+  upload.single("profilePhoto")(req, res, (err) => {
+    if (err) {
+      // Cloudinary/multer errors are often non-Error objects → [object Object]
+      const errMsg = err instanceof Error
+        ? err.message
+        : (typeof err === "string" ? err : JSON.stringify(err));
+      console.error("Multer/Cloudinary error in signup:", errMsg);
+
+      // Don't block signup for upload failures — continue without photo
+      console.log("⚠️ Continuing signup without profile photo due to upload error");
+      req.file = null;
+    }
+    next();
+  });
+}, signup);
 
 // login
 router.post("/login", login);

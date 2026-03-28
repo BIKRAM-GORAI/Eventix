@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Analytics — EventHub Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    .analytics-header {
+      display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 32px;
+    }
+    .stat-glass {
+      flex: 1; min-width: 200px; background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 24px; text-align: center;
+      position: relative; overflow: hidden; transition: all var(--transition-base);
+    }
+    .stat-glass::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--green-primary), var(--green-dark));
+      opacity: 0; transition: opacity var(--transition-base);
+    }
+    .stat-glass:hover { border-color: var(--green-border); box-shadow: var(--shadow-green); }
+    .stat-glass:hover::before { opacity: 1; }
+    .stat-glass .stat-emoji { font-size: 2rem; margin-bottom: 8px; }
+    .stat-glass .stat-val {
+      font-family: var(--font-display); font-size: 2.2rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--green-primary), #00cc33);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-glass .stat-lbl { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+
+    .chart-section {
+      display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;
+    }
+    @media (max-width: 768px) { .chart-section { grid-template-columns: 1fr; } }
+
+    .chart-box {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 24px;
+    }
+    .chart-box h3 {
+      font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .chart-box canvas { max-height: 320px; }
+
+    .table-box {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 32px;
+    }
+    .table-box h3 {
+      font-family: var(--font-display); font-size: 1.1rem; padding: 20px 24px 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .data-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .data-table th, .data-table td {
+      padding: 12px 20px; text-align: left; font-size: 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .data-table th {
+      background: rgba(0,255,65,0.03); color: var(--text-secondary);
+      font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .data-table .amount { font-family: var(--font-display); font-weight: 700; color: var(--green-primary); }
+    .data-table .txn-id { font-family: 'Space Grotesk', monospace; font-size: 0.8rem; color: var(--text-muted); }
+    .data-table .time { font-size: 0.8rem; color: var(--text-secondary); }
+
+    .event-filter {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .event-filter select {
+      padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-primary);
+      font-size: 0.9rem; cursor: pointer; outline: none; min-width: 220px;
+    }
+    .event-filter select:focus { border-color: var(--green-primary); }
+    .event-filter label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+
+    .no-data {
+      text-align: center; padding: 60px 20px; color: var(--text-muted);
+    }
+    .no-data .nd-icon { font-size: 3rem; margin-bottom: 12px; }
+    .no-data p { font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="admin-dashboard.html">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>💰 Payment <span class="highlight">Analytics</span></h1>
+        <p>Track revenue, view transaction history, and analyze payment data</p>
+      </div>
+    </div>
+
+    <div class="container" style="padding-bottom: 80px;">
+      <!-- Loading state -->
+      <div id="loadingState">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading analytics data...</p></div>
+      </div>
+
+      <!-- No data state -->
+      <div id="noDataState" style="display: none;">
+        <div class="no-data">
+          <div class="nd-icon">📭</div>
+          <p>No payment data yet. Payments will appear here once students register for paid events.</p>
+        </div>
+      </div>
+
+      <!-- Analytics content -->
+      <div id="analyticsContent" style="display: none;">
+        <!-- Summary Stats -->
+        <div class="analytics-header" id="statsRow"></div>
+
+        <!-- Charts -->
+        <div class="chart-section">
+          <div class="chart-box">
+            <h3>📊 Revenue by Event</h3>
+            <canvas id="revenueChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>📈 Payment Distribution</h3>
+            <canvas id="distChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Event level detail -->
+        <div class="event-filter">
+          <label>🔍 Filter by Event:</label>
+          <select id="eventFilter" onchange="filterTable()">
+            <option value="all">All Events</option>
+          </select>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="table-box">
+          <h3>📋 Transaction History</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Participant</th>
+                  <th>Event</th>
+                  <th>Team</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="txnTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Event Breakdown Table -->
+        <div class="table-box">
+          <h3>🏆 Event Revenue Breakdown</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Category</th>
+                  <th>Transactions</th>
+                  <th>Total Revenue</th>
+                  <th>Avg. per Transaction</th>
+                </tr>
+              </thead>
+              <tbody id="eventTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    let analyticsData = null;
+    let revenueChartInstance = null;
+    let distChartInstance = null;
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+
+    async function loadAnalytics() {
+      try {
+        const res = await fetch("http://localhost:5000/api/payment/analytics");
+        analyticsData = await res.json();
+
+        document.getElementById("loadingState").style.display = "none";
+
+        if (analyticsData.totalTransactions === 0) {
+          document.getElementById("noDataState").style.display = "block";
+          return;
+        }
+
+        document.getElementById("analyticsContent").style.display = "block";
+
+        renderStats();
+        renderCharts();
+        populateFilter();
+        renderTables();
+
+        // Animate
+        gsap.from(".stat-glass", { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, ease: "power3.out" });
+        gsap.from(".chart-box", { opacity: 0, y: 30, duration: 0.6, stagger: 0.15, delay: 0.3, ease: "power3.out" });
+        gsap.from(".table-box", { opacity: 0, y: 30, duration: 0.6, stagger: 0.15, delay: 0.5, ease: "power3.out" });
+
+      } catch (err) {
+        console.error("Analytics error:", err);
+        document.getElementById("loadingState").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load analytics</p></div>';
+      }
+    }
+
+    function renderStats() {
+      const d = analyticsData;
+      document.getElementById("statsRow").innerHTML = `
+        <div class="stat-glass">
+          <div class="stat-emoji">💰</div>
+          <div class="stat-val">₹${d.totalRevenue.toLocaleString()}</div>
+          <div class="stat-lbl">Total Revenue</div>
+        </div>
+        <div class="stat-glass">
+          <div class="stat-emoji">🧾</div>
+          <div class="stat-val">${d.totalTransactions}</div>
+          <div class="stat-lbl">Total Transactions</div>
+        </div>
+        <div class="stat-glass">
+          <div class="stat-emoji">📊</div>
+          <div class="stat-val">₹${d.averageAmount.toLocaleString()}</div>
+          <div class="stat-lbl">Avg. per Transaction</div>
+        </div>
+        <div class="stat-glass">
+          <div class="stat-emoji">🎯</div>
+          <div class="stat-val">${d.eventBreakdown.length}</div>
+          <div class="stat-lbl">Paid Events</div>
+        </div>
+      `;
+    }
+
+    function renderCharts() {
+      const d = analyticsData;
+      const labels = d.eventBreakdown.map(e => e.title.length > 20 ? e.title.substring(0, 20) + '…' : e.title);
+      const amounts = d.eventBreakdown.map(e => e.totalAmount);
+      const counts = d.eventBreakdown.map(e => e.count);
+
+      // Colors
+      const barColors = d.eventBreakdown.map((_, i) => {
+        const hue = 140 + (i * 30) % 180;
+        return `hsla(${hue}, 80%, 55%, 0.7)`;
+      });
+      const barBorders = barColors.map(c => c.replace("0.7", "1"));
+
+      // Revenue Bar Chart
+      const ctx1 = document.getElementById("revenueChart").getContext("2d");
+      if (revenueChartInstance) revenueChartInstance.destroy();
+      revenueChartInstance = new Chart(ctx1, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Revenue (₹)",
+            data: amounts,
+            backgroundColor: barColors,
+            borderColor: barBorders,
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `₹${ctx.raw.toLocaleString()} (${counts[ctx.dataIndex]} txn${counts[ctx.dataIndex] > 1 ? 's' : ''})`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#999", font: { size: 11 } },
+              grid: { color: "rgba(255,255,255,0.04)" }
+            },
+            y: {
+              ticks: { color: "#999", callback: v => "₹" + v.toLocaleString() },
+              grid: { color: "rgba(255,255,255,0.04)" }
+            }
+          }
+        }
+      });
+
+      // Distribution Doughnut
+      const ctx2 = document.getElementById("distChart").getContext("2d");
+      if (distChartInstance) distChartInstance.destroy();
+      distChartInstance = new Chart(ctx2, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{
+            data: amounts,
+            backgroundColor: barColors,
+            borderColor: "#141414",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: "60%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: "#b3b3b3", font: { size: 11 }, padding: 12 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const pct = Math.round(ctx.raw / d.totalRevenue * 100);
+                  return ` ₹${ctx.raw.toLocaleString()} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function populateFilter() {
+      const select = document.getElementById("eventFilter");
+      analyticsData.eventBreakdown.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.eventId;
+        opt.textContent = e.title;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderTables(filterEventId = "all") {
+      // Transaction table
+      const tbody = document.getElementById("txnTableBody");
+      tbody.innerHTML = "";
+
+      let allPayments = [];
+      analyticsData.eventBreakdown.forEach(event => {
+        event.payments.forEach(p => {
+          allPayments.push({ ...p, eventTitle: event.title });
+        });
+      });
+
+      if (filterEventId !== "all") {
+        const ev = analyticsData.eventBreakdown.find(e => e.eventId === filterEventId);
+        allPayments = ev ? ev.payments.map(p => ({ ...p, eventTitle: ev.title })) : [];
+      }
+
+      allPayments.sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
+
+      allPayments.forEach(p => {
+        const date = new Date(p.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        const time = new Date(p.paidAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+        tbody.innerHTML += `
+          <tr>
+            <td class="txn-id">${p.transactionId}</td>
+            <td>
+              <div style="font-weight:600;">${p.userName}</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">${p.userEmail}</div>
+            </td>
+            <td>${p.eventTitle}</td>
+            <td>${p.teamName || '<span style="color:var(--text-muted);">Solo</span>'}</td>
+            <td class="amount">₹${p.amount.toLocaleString()}</td>
+            <td class="time">${date}<br>${time}</td>
+            <td><span class="badge badge-approved">✅ ${p.status}</span></td>
+          </tr>
+        `;
+      });
+
+      if (allPayments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:30px;">No transactions found</td></tr>';
+      }
+
+      // Event breakdown table
+      const eventTbody = document.getElementById("eventTableBody");
+      eventTbody.innerHTML = "";
+
+      const events = filterEventId === "all"
+        ? analyticsData.eventBreakdown
+        : analyticsData.eventBreakdown.filter(e => e.eventId === filterEventId);
+
+      events.forEach(e => {
+        const avg = e.count > 0 ? Math.round(e.totalAmount / e.count) : 0;
+        eventTbody.innerHTML += `
+          <tr>
+            <td style="font-weight:600;">${e.title}</td>
+            <td><span class="badge" style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); color:var(--purple-accent);">${e.category || 'Other'}</span></td>
+            <td>${e.count}</td>
+            <td class="amount">₹${e.totalAmount.toLocaleString()}</td>
+            <td>₹${avg.toLocaleString()}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterTable() {
+      const filter = document.getElementById("eventFilter").value;
+      renderTables(filter);
+    }
+
+    loadAnalytics();
+  </script>
+</body>
+</html>

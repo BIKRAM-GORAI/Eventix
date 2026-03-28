@@ -29,7 +29,7 @@ export const signup = async (req, res) => {
 
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
-    const profilePhoto = req.file ? req.file.path : "";
+    const profilePhoto = req.body ? req.body.path : "";
 
     // create user (NOT verified yet)
     const user = await User.create({
@@ -59,7 +59,13 @@ export const signup = async (req, res) => {
       userId: user._id,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("🔥 Error in signup controller:", error);
+    try {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Stringified: " + JSON.stringify(error) });
+    } catch (e) {
+      console.error("🔥 Error serializing error in signup controller:", e);
+      res.status(500).send("Fatal error format");
+    }
   }
 };
 

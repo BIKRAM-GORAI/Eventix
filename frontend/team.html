@@ -5,6 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Management — EventHub</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Payment Modal */
+    .pay-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(10px); z-index: 2000; justify-content: center; align-items: center;
+      padding: 20px;
+    }
+    .pay-overlay.active { display: flex; }
+    .pay-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: 36px; width: 100%; max-width: 440px;
+      position: relative;
+    }
+    .pay-card h2 { font-family: var(--font-display); text-align: center; margin-bottom: 8px; font-size: 1.5rem; }
+    .pay-card .pay-amount {
+      text-align: center; font-family: var(--font-display); font-size: 2.5rem;
+      font-weight: 800; color: var(--green-primary); margin: 16px 0 24px;
+      text-shadow: 0 0 20px rgba(0,255,65,0.3);
+    }
+    .pay-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;
+    }
+    .pay-close:hover { color: var(--text-primary); }
+
+    .pay-field { margin-bottom: 16px; }
+    .pay-field label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; }
+    .pay-field input {
+      width: 100%; padding: 12px 16px; background: var(--bg-input);
+      border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+      color: var(--text-primary); font-family: 'Space Grotesk', monospace;
+      font-size: 1rem; letter-spacing: 0.12em; outline: none;
+      transition: border-color var(--transition-fast);
+    }
+    .pay-field input:focus { border-color: var(--green-primary); box-shadow: 0 0 0 3px rgba(0,255,65,0.08); }
+    .pay-field input::placeholder { color: var(--text-muted); letter-spacing: 0.05em; }
+
+    .pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .pay-method {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: rgba(0,255,65,0.05); border: 1px solid var(--green-border);
+      border-radius: var(--radius-sm); margin-bottom: 20px;
+    }
+    .pay-method-icon { font-size: 1.5rem; }
+    .pay-method-label { font-size: 0.85rem; color: var(--text-secondary); }
+    .pay-method-name { font-weight: 600; font-size: 0.95rem; }
+
+    .pay-secure {
+      text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Confirm popup */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      z-index: 3000; justify-content: center; align-items: center;
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box {
+      background: var(--bg-secondary); border: 1px solid var(--green-border);
+      border-radius: var(--radius-lg); padding: 32px; text-align: center;
+      max-width: 380px; width: 100%; box-shadow: var(--shadow-green-strong);
+    }
+    .confirm-box .confirm-icon { font-size: 3rem; margin-bottom: 12px; }
+    .confirm-box h3 { font-family: var(--font-display); margin-bottom: 8px; font-size: 1.3rem; }
+    .confirm-box p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px; }
+    .confirm-btns { display: flex; gap: 12px; }
+    .confirm-btns .btn { flex: 1; }
+
+    .pay-success { display: none; text-align: center; padding: 20px; }
+    .pay-success.active { display: block; }
+    .pay-success .check { font-size: 4rem; margin-bottom: 12px; animation: popIn 0.5s ease; }
+    .pay-success h3 { font-family: var(--font-display); font-size: 1.3rem; color: var(--green-primary); margin-bottom: 8px; }
+    .pay-success p { color: var(--text-secondary); font-size: 0.9rem; }
+    .pay-success .txn { font-family: 'Space Grotesk', monospace; color: var(--text-muted); font-size: 0.8rem; margin-top: 8px; }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
 
@@ -50,6 +133,74 @@
           <div id="teamDetails" style="color: var(--text-secondary);">No team loaded</div>
           <button id="registerBtn" style="display: none; margin-top: 16px;" onclick="registerTeam()" class="btn btn-primary btn-block">Register Team →</button>
         </div>
+        <p id="teamMsg" class="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="pay-overlay" id="payModal">
+    <div class="pay-card">
+      <button class="pay-close" onclick="closePayModal()">✕</button>
+
+      <div id="payFormSection">
+        <h2>💳 Team Payment</h2>
+        <div class="pay-amount" id="payAmountDisplay">₹0</div>
+
+        <div class="pay-method">
+          <div class="pay-method-icon">🏦</div>
+          <div>
+            <div class="pay-method-name">Demo Payment Gateway</div>
+            <div class="pay-method-label">Simulated payment — no real charges</div>
+          </div>
+        </div>
+
+        <div class="pay-field">
+          <label>Card Number</label>
+          <input type="text" id="payCardNumber" placeholder="4242 4242 4242 4242" maxlength="19">
+        </div>
+        <div class="pay-field">
+          <label>Card Holder Name</label>
+          <input type="text" id="payCardName" placeholder="Team Leader Name">
+        </div>
+        <div class="pay-row">
+          <div class="pay-field">
+            <label>Expiry Date</label>
+            <input type="text" id="payExpiry" placeholder="MM/YY" maxlength="5">
+          </div>
+          <div class="pay-field">
+            <label>CVV</label>
+            <input type="text" id="payCVV" placeholder="•••" maxlength="3">
+          </div>
+        </div>
+
+        <button onclick="showPayConfirm()" class="btn btn-primary btn-block btn-lg" id="payNowBtn">
+          Pay <span id="payBtnAmount">₹0</span> →
+        </button>
+        <div class="pay-secure">🔒 Secured demo transaction · No real money charged</div>
+      </div>
+
+      <div class="pay-success" id="paySuccessSection">
+        <div class="check">✅</div>
+        <h3>Team Payment Successful!</h3>
+        <p>Your team registration has been submitted for approval.</p>
+        <div class="txn" id="payTxnId"></div>
+        <button onclick="window.location.href='my-events.html'" class="btn btn-primary btn-block" style="margin-top: 20px;">
+          View My Events →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Popup -->
+  <div class="confirm-overlay" id="confirmPopup">
+    <div class="confirm-box">
+      <div class="confirm-icon">💰</div>
+      <h3>Confirm Team Payment</h3>
+      <p>Pay <strong id="confirmAmount">₹0</strong> for your team? This is a demo payment.</p>
+      <div class="confirm-btns">
+        <button onclick="cancelConfirm()" class="btn btn-secondary">Cancel</button>
+        <button onclick="executePayment()" class="btn btn-primary" id="confirmPayBtn">Confirm & Pay</button>
       </div>
     </div>
   </div>
@@ -59,6 +210,27 @@
     const eventId = localStorage.getItem("selectedEventId");
 
     let currentTeam = null;
+    let eventData = null;
+    let pendingRegistrationId = null;
+
+    // Fetch event data for payment info
+    async function fetchEventData() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
+        eventData = await res.json();
+      } catch (e) { console.error("Failed to fetch event", e); }
+    }
+
+    // Auto-format card inputs
+    document.getElementById("payCardNumber")?.addEventListener("input", function(e) {
+      let v = e.target.value.replace(/\D/g, "").substring(0, 16);
+      e.target.value = v.replace(/(.{4})/g, "$1 ").trim();
+    });
+    document.getElementById("payExpiry")?.addEventListener("input", function(e) {
+      let v = e.target.value.replace(/\D/g, "").substring(0, 4);
+      if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2);
+      e.target.value = v;
+    });
 
     async function createTeam() {
       const teamName = document.getElementById("teamName").value;
@@ -69,8 +241,11 @@
       });
       const data = await res.json();
       alert(data.message);
-      localStorage.setItem("teamId", data.team._id);
-      displayTeam();
+      if (data.team) {
+        localStorage.setItem("teamId", data.team._id);
+        currentTeam = data.team;
+        displayTeam();
+      }
     }
 
     async function joinTeam() {
@@ -82,43 +257,148 @@
       });
       const data = await res.json();
       alert(data.message);
-      localStorage.setItem("teamId", data.team._id);
-      displayTeam();
+      if (data.team) {
+        localStorage.setItem("teamId", data.team._id);
+        currentTeam = data.team;
+        displayTeam();
+      }
     }
 
     function displayTeam() {
       if (!currentTeam) return;
-      const members = currentTeam.members.length;
+      const members = currentTeam.members?.length || 0;
       const max = currentTeam.teamSize || 4;
       document.getElementById("teamDetails").innerHTML = `
         <p>Team Code: <span class="team-code">${currentTeam.teamCode}</span></p>
         <p style="margin-top:8px;">Members: ${members} / ${max}</p>
       `;
-      if (members >= max) {
-        document.getElementById("registerBtn").style.display = "block";
+
+      const btn = document.getElementById("registerBtn");
+      btn.style.display = "block";
+
+      if (eventData && eventData.price > 0) {
+        btn.innerHTML = `Register Team & Pay ₹${eventData.price} →`;
       }
     }
 
     async function registerTeam() {
-      const res = await fetch("http://localhost:5000/api/registration/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: currentTeam._id, eventId }),
-      });
-      const data = await res.json();
-      alert(data.message);
+      const btn = document.getElementById("registerBtn");
+      const msg = document.getElementById("teamMsg");
+      btn.disabled = true;
+      btn.innerText = "⏳ Processing...";
+
+      try {
+        const res = await fetch("http://localhost:5000/api/registration/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamId: currentTeam._id, userId, eventId }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          pendingRegistrationId = data.registration._id;
+
+          if (eventData && eventData.price > 0) {
+            openPayModal(eventData.price);
+            btn.innerHTML = `Register Team & Pay ₹${eventData.price} →`;
+            btn.disabled = false;
+          } else {
+            msg.innerText = "✅ Team registered successfully!";
+            msg.className = "msg msg-success";
+            setTimeout(() => { window.location.href = "my-events.html"; }, 1500);
+          }
+        } else {
+          msg.innerText = data.message || "Registration failed.";
+          msg.className = "msg msg-error";
+          btn.disabled = false;
+          btn.innerText = "Register Team →";
+        }
+      } catch (err) {
+        msg.innerText = "Error connecting to server.";
+        msg.className = "msg msg-error";
+        btn.disabled = false;
+        btn.innerText = "Register Team →";
+      }
     }
+
+    function openPayModal(amount) {
+      document.getElementById("payAmountDisplay").textContent = `₹${amount}`;
+      document.getElementById("payBtnAmount").textContent = `₹${amount}`;
+      document.getElementById("confirmAmount").textContent = `₹${amount}`;
+      document.getElementById("payFormSection").style.display = "block";
+      document.getElementById("paySuccessSection").classList.remove("active");
+      document.getElementById("payModal").classList.add("active");
+    }
+
+    function closePayModal() {
+      document.getElementById("payModal").classList.remove("active");
+    }
+
+    function showPayConfirm() {
+      const card = document.getElementById("payCardNumber").value;
+      const name = document.getElementById("payCardName").value;
+      const exp = document.getElementById("payExpiry").value;
+      const cvv = document.getElementById("payCVV").value;
+      if (!card || !name || !exp || !cvv) { alert("Please fill in all card details"); return; }
+      document.getElementById("confirmPopup").classList.add("active");
+    }
+
+    function cancelConfirm() {
+      document.getElementById("confirmPopup").classList.remove("active");
+    }
+
+    async function executePayment() {
+      const btn = document.getElementById("confirmPayBtn");
+      btn.innerText = "⏳ Processing...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/payment/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            registrationId: pendingRegistrationId,
+            eventId,
+            userId,
+            teamId: currentTeam._id,
+            amount: eventData.price,
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          document.getElementById("confirmPopup").classList.remove("active");
+          document.getElementById("payFormSection").style.display = "none";
+          document.getElementById("payTxnId").textContent = `Transaction ID: ${data.transactionId}`;
+          document.getElementById("paySuccessSection").classList.add("active");
+        } else {
+          alert(data.message || "Payment failed");
+          btn.innerText = "Confirm & Pay";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Payment failed. Try again.");
+        btn.innerText = "Confirm & Pay";
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { closePayModal(); cancelConfirm(); }
+    });
 
     async function loadExistingTeam() {
       const teamId = localStorage.getItem("teamId");
       if (!teamId) return;
-      const res = await fetch(`http://localhost:5000/api/team/${teamId}`);
-      const data = await res.json();
-      currentTeam = data;
-      displayTeam();
+      try {
+        const res = await fetch(`http://localhost:5000/api/team/${teamId}`);
+        const data = await res.json();
+        currentTeam = data;
+        displayTeam();
+      } catch (e) { console.error(e); }
     }
 
-    loadExistingTeam();
+    fetchEventData().then(() => loadExistingTeam());
   </script>
 </body>
 </html>

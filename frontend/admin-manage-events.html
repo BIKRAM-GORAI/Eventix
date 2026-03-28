@@ -208,14 +208,24 @@
           const typeBadge = event.isTeamEvent
             ? `<span class="badge badge-team" style="font-size:0.7rem;">Team (${event.teamSize})</span>`
             : '<span class="badge badge-solo" style="font-size:0.7rem;">Solo</span>';
+          const statusBadge = event.isConcluded
+            ? '<span class="badge badge-approved" style="font-size:0.7rem;">Concluded</span>'
+            : '<span class="badge badge-pending" style="font-size:0.7rem;">Active</span>';
+          
+          const concludeAction = event.isConcluded
+            ? `<button class="btn btn-outline-green btn-sm edit-btn" style="border-color:var(--orange-accent); color:var(--orange-accent);" onclick="toggleConclude('${event._id}', false)">🔄 Reopen</button>`
+            : `<button class="btn btn-outline-green btn-sm edit-btn" style="border-color:var(--red-accent); color:var(--red-accent);" onclick="toggleConclude('${event._id}', true)">🏁 Conclude</button>`;
 
           card.innerHTML = `
             <div class="manage-card-top">
               <div>
-                <div style="display:flex; gap:6px; margin-bottom:4px;">${catBadge} ${typeBadge}</div>
+                <div style="display:flex; gap:6px; margin-bottom:4px;">${catBadge} ${typeBadge} ${statusBadge}</div>
                 <h3>${event.title}</h3>
               </div>
-              <button class="btn btn-outline-green btn-sm edit-btn" onclick="openEdit('${event._id}')">✏️ Edit</button>
+              <div style="display:flex; gap:8px;">
+                ${concludeAction}
+                <button class="btn btn-outline-green btn-sm edit-btn" onclick="openEdit('${event._id}')">✏️ Edit</button>
+              </div>
             </div>
             <div class="manage-card-body">
               <div class="manage-card-meta">
@@ -232,6 +242,26 @@
       } catch (err) {
         console.error(err);
         document.getElementById("eventGrid").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load events</p></div>';
+      }
+    }
+
+    // ── CONCLUDE / REOPEN ──
+    async function toggleConclude(eventId, willConclude) {
+      const action = willConclude ? "conclude" : "reopen";
+      if (!confirm(`Are you sure you want to ${action} this event?`)) return;
+      
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${eventId}/${action}`, {
+          method: "PUT"
+        });
+        const data = await res.json();
+        if (res.ok) {
+          loadEvents();
+        } else {
+          alert(data.message || `Failed to ${action}`);
+        }
+      } catch (err) {
+        alert(`Server error while trying to ${action} event`);
       }
     }
 

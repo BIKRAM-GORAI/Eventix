@@ -158,4 +158,48 @@ router.post("/:id/notify", async (req, res) => {
   }
 });
 
+// 🔹 CONCLUDE an event
+router.put("/:id/conclude", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    if (event.isConcluded) {
+      return res.status(400).json({ message: "Event is already concluded" });
+    }
+
+    event.isConcluded = true;
+    event.concludedAt = new Date();
+    await event.save();
+
+    res.json({ message: "Event concluded successfully!", event });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🔹 REOPEN a concluded event (undo conclude)
+router.put("/:id/reopen", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    if (!event.isConcluded) {
+      return res.status(400).json({ message: "Event is not concluded" });
+    }
+
+    event.isConcluded = false;
+    event.concludedAt = undefined;
+    await event.save();
+
+    res.json({ message: "Event reopened successfully!", event });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

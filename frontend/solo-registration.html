@@ -5,6 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solo Registration — EventHub</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Payment Modal */
+    .pay-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(10px); z-index: 2000; justify-content: center; align-items: center;
+      padding: 20px;
+    }
+    .pay-overlay.active { display: flex; }
+    .pay-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: 36px; width: 100%; max-width: 440px;
+      position: relative;
+    }
+    .pay-card h2 { font-family: var(--font-display); text-align: center; margin-bottom: 8px; font-size: 1.5rem; }
+    .pay-card .pay-amount {
+      text-align: center; font-family: var(--font-display); font-size: 2.5rem;
+      font-weight: 800; color: var(--green-primary); margin: 16px 0 24px;
+      text-shadow: 0 0 20px rgba(0,255,65,0.3);
+    }
+    .pay-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;
+    }
+    .pay-close:hover { color: var(--text-primary); }
+
+    .pay-field { margin-bottom: 16px; }
+    .pay-field label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; }
+    .pay-field input {
+      width: 100%; padding: 12px 16px; background: var(--bg-input);
+      border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+      color: var(--text-primary); font-family: 'Space Grotesk', monospace;
+      font-size: 1rem; letter-spacing: 0.12em; outline: none;
+      transition: border-color var(--transition-fast);
+    }
+    .pay-field input:focus { border-color: var(--green-primary); box-shadow: 0 0 0 3px rgba(0,255,65,0.08); }
+    .pay-field input::placeholder { color: var(--text-muted); letter-spacing: 0.05em; }
+
+    .pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .pay-method {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: rgba(0,255,65,0.05); border: 1px solid var(--green-border);
+      border-radius: var(--radius-sm); margin-bottom: 20px;
+    }
+    .pay-method-icon { font-size: 1.5rem; }
+    .pay-method-label { font-size: 0.85rem; color: var(--text-secondary); }
+    .pay-method-name { font-weight: 600; font-size: 0.95rem; }
+
+    .pay-secure {
+      text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Confirm popup */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      z-index: 3000; justify-content: center; align-items: center;
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box {
+      background: var(--bg-secondary); border: 1px solid var(--green-border);
+      border-radius: var(--radius-lg); padding: 32px; text-align: center;
+      max-width: 380px; width: 100%; box-shadow: var(--shadow-green-strong);
+    }
+    .confirm-box .confirm-icon { font-size: 3rem; margin-bottom: 12px; }
+    .confirm-box h3 { font-family: var(--font-display); margin-bottom: 8px; font-size: 1.3rem; }
+    .confirm-box p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px; }
+    .confirm-btns { display: flex; gap: 12px; }
+    .confirm-btns .btn { flex: 1; }
+
+    /* Success animation */
+    .pay-success { display: none; text-align: center; padding: 20px; }
+    .pay-success.active { display: block; }
+    .pay-success .check { font-size: 4rem; margin-bottom: 12px; animation: popIn 0.5s ease; }
+    .pay-success h3 { font-family: var(--font-display); font-size: 1.3rem; color: var(--green-primary); margin-bottom: 8px; }
+    .pay-success p { color: var(--text-secondary); font-size: 0.9rem; }
+    .pay-success .txn { font-family: 'Space Grotesk', monospace; color: var(--text-muted); font-size: 0.8rem; margin-top: 8px; }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
 
@@ -49,42 +133,136 @@
     </div>
   </div>
 
+  <!-- Payment Modal -->
+  <div class="pay-overlay" id="payModal">
+    <div class="pay-card">
+      <button class="pay-close" onclick="closePayModal()">✕</button>
+
+      <!-- Payment Form -->
+      <div id="payFormSection">
+        <h2>💳 Complete Payment</h2>
+        <div class="pay-amount" id="payAmountDisplay">₹0</div>
+
+        <div class="pay-method">
+          <div class="pay-method-icon">🏦</div>
+          <div>
+            <div class="pay-method-name">Demo Payment Gateway</div>
+            <div class="pay-method-label">Simulated payment — no real charges</div>
+          </div>
+        </div>
+
+        <div class="pay-field">
+          <label>Card Number</label>
+          <input type="text" id="payCardNumber" placeholder="4242 4242 4242 4242" maxlength="19">
+        </div>
+
+        <div class="pay-field">
+          <label>Card Holder Name</label>
+          <input type="text" id="payCardName" placeholder="John Doe">
+        </div>
+
+        <div class="pay-row">
+          <div class="pay-field">
+            <label>Expiry Date</label>
+            <input type="text" id="payExpiry" placeholder="MM/YY" maxlength="5">
+          </div>
+          <div class="pay-field">
+            <label>CVV</label>
+            <input type="text" id="payCVV" placeholder="•••" maxlength="3">
+          </div>
+        </div>
+
+        <button onclick="showPayConfirm()" class="btn btn-primary btn-block btn-lg" id="payNowBtn">
+          Pay <span id="payBtnAmount">₹0</span> →
+        </button>
+
+        <div class="pay-secure">🔒 Secured demo transaction · No real money charged</div>
+      </div>
+
+      <!-- Success State -->
+      <div class="pay-success" id="paySuccessSection">
+        <div class="check">✅</div>
+        <h3>Payment Successful!</h3>
+        <p>Your registration has been submitted for approval.</p>
+        <div class="txn" id="payTxnId"></div>
+        <button onclick="window.location.href='my-events.html'" class="btn btn-primary btn-block" style="margin-top: 20px;">
+          View My Events →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Popup -->
+  <div class="confirm-overlay" id="confirmPopup">
+    <div class="confirm-box">
+      <div class="confirm-icon">💰</div>
+      <h3>Confirm Payment</h3>
+      <p>Pay <strong id="confirmAmount">₹0</strong> for this event? This is a demo payment — no real money will be charged.</p>
+      <div class="confirm-btns">
+        <button onclick="cancelConfirm()" class="btn btn-secondary">Cancel</button>
+        <button onclick="executePayment()" class="btn btn-primary" id="confirmPayBtn">Confirm & Pay</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script>
     const userId = localStorage.getItem("userId");
     const eventId = localStorage.getItem("selectedEventId");
     if (!userId || !eventId) window.location.href = "events.html";
 
+    let eventData = null;
+    let registrationId = null;
+
     gsap.from(".auth-card", { opacity: 0, y: 40, duration: 0.8, ease: "power3.out" });
+
+    // Auto-format card number
+    document.getElementById("payCardNumber").addEventListener("input", function(e) {
+      let v = e.target.value.replace(/\D/g, "").substring(0, 16);
+      e.target.value = v.replace(/(.{4})/g, "$1 ").trim();
+    });
+
+    // Auto-format expiry
+    document.getElementById("payExpiry").addEventListener("input", function(e) {
+      let v = e.target.value.replace(/\D/g, "").substring(0, 4);
+      if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2);
+      e.target.value = v;
+    });
 
     async function fetchEventDetails() {
       try {
         const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
-        const event = await res.json();
+        eventData = await res.json();
 
         if (res.ok) {
+          const isPaid = eventData.price > 0;
           document.getElementById("eventSummary").innerHTML = `
             <div class="reg-detail-row">
               <span class="label">Event</span>
-              <span class="value">${event.title}</span>
+              <span class="value">${eventData.title}</span>
             </div>
             <div class="reg-detail-row">
               <span class="label">Venue</span>
-              <span class="value">${event.venue}</span>
+              <span class="value">${eventData.venue}</span>
             </div>
             <div class="reg-detail-row">
               <span class="label">Date</span>
-              <span class="value">${new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
+              <span class="value">${new Date(eventData.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
             </div>
             <div class="reg-detail-row">
               <span class="label">Fee</span>
-              <span class="value" style="color: ${event.price > 0 ? 'var(--orange-accent)' : 'var(--green-primary)'};">${event.price > 0 ? `₹${event.price}` : "Free"}</span>
+              <span class="value" style="color: ${isPaid ? 'var(--orange-accent)' : 'var(--green-primary)'};">${isPaid ? `₹${eventData.price}` : "Free"}</span>
             </div>
             <div class="reg-detail-row">
               <span class="label">Type</span>
               <span class="value">Solo Entry</span>
             </div>
           `;
+
+          // Update button text for paid events
+          if (isPaid) {
+            document.getElementById("regBtn").innerHTML = `Register & Pay ₹${eventData.price} →`;
+          }
         }
       } catch (err) {
         console.error(err);
@@ -109,22 +287,110 @@
         const data = await res.json();
 
         if (res.ok) {
-          msg.innerText = "✅ Registration Successful!";
-          msg.className = "msg msg-success";
-          setTimeout(() => { window.location.href = "my-events.html"; }, 1500);
+          registrationId = data.registration._id;
+
+          // If paid event → show payment modal
+          if (eventData && eventData.price > 0) {
+            openPayModal(eventData.price);
+            btn.innerText = `Register & Pay ₹${eventData.price} →`;
+            btn.disabled = false;
+          } else {
+            msg.innerText = "✅ Registration Successful!";
+            msg.className = "msg msg-success";
+            setTimeout(() => { window.location.href = "my-events.html"; }, 1500);
+          }
         } else {
           msg.innerText = data.message || "Registration failed.";
           msg.className = "msg msg-error";
           btn.disabled = false;
-          btn.innerText = "Confirm & Register →";
+          btn.innerText = eventData?.price > 0 ? `Register & Pay ₹${eventData.price} →` : "Confirm & Register →";
         }
       } catch (err) {
+        console.error("Registration error:", err.message);
         msg.innerText = "Error connecting to server.";
         msg.className = "msg msg-error";
         btn.disabled = false;
-        btn.innerText = "Confirm & Register →";
+        btn.innerText = eventData?.price > 0 ? `Register & Pay ₹${eventData.price} →` : "Confirm & Register →";
       }
     }
+
+    function openPayModal(amount) {
+      document.getElementById("payAmountDisplay").textContent = `₹${amount}`;
+      document.getElementById("payBtnAmount").textContent = `₹${amount}`;
+      document.getElementById("confirmAmount").textContent = `₹${amount}`;
+      document.getElementById("payFormSection").style.display = "block";
+      document.getElementById("paySuccessSection").classList.remove("active");
+      document.getElementById("payModal").classList.add("active");
+      gsap.from(".pay-card", { opacity: 0, scale: 0.9, duration: 0.4, ease: "power3.out" });
+    }
+
+    function closePayModal() {
+      document.getElementById("payModal").classList.remove("active");
+    }
+
+    function showPayConfirm() {
+      const card = document.getElementById("payCardNumber").value;
+      const name = document.getElementById("payCardName").value;
+      const exp = document.getElementById("payExpiry").value;
+      const cvv = document.getElementById("payCVV").value;
+
+      if (!card || !name || !exp || !cvv) {
+        alert("Please fill in all card details");
+        return;
+      }
+
+      document.getElementById("confirmPopup").classList.add("active");
+      gsap.from(".confirm-box", { opacity: 0, scale: 0.85, duration: 0.3, ease: "power3.out" });
+    }
+
+    function cancelConfirm() {
+      document.getElementById("confirmPopup").classList.remove("active");
+    }
+
+    async function executePayment() {
+      const btn = document.getElementById("confirmPayBtn");
+      btn.innerText = "⏳ Processing...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/payment/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            registrationId,
+            eventId,
+            userId,
+            amount: eventData.price,
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Hide confirm popup
+          document.getElementById("confirmPopup").classList.remove("active");
+
+          // Show success
+          document.getElementById("payFormSection").style.display = "none";
+          document.getElementById("payTxnId").textContent = `Transaction ID: ${data.transactionId}`;
+          document.getElementById("paySuccessSection").classList.add("active");
+        } else {
+          alert(data.message || "Payment failed");
+          btn.innerText = "Confirm & Pay";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error("Payment error:", err.message);
+        alert("Payment failed. Try again.");
+        btn.innerText = "Confirm & Pay";
+        btn.disabled = false;
+      }
+    }
+
+    // Close modals on ESC
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { closePayModal(); cancelConfirm(); }
+    });
 
     fetchEventDetails();
   </script>
