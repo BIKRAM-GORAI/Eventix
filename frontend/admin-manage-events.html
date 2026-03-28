@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Events — EventHub Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Manage Events styles ── */
+    .manage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all var(--transition-base);
+      cursor: pointer;
+    }
+    .manage-card:hover { border-color: var(--green-border); box-shadow: var(--shadow-green); }
+
+    .manage-card-top {
+      height: 80px;
+      background: linear-gradient(135deg, rgba(0,255,65,0.12) 0%, rgba(0,153,26,0.06) 50%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .manage-card-top h3 { font-family: var(--font-display); font-size: 1.15rem; }
+    .manage-card-body { padding: 16px 20px; }
+    .manage-card-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; }
+    .manage-card-actions { display: flex; gap: 8px; }
+    .edit-btn { z-index: 2; position: relative; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: flex-start;
+      padding: 40px 20px; overflow-y: auto;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: 32px; width: 100%; max-width: 640px;
+      position: relative; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-card h2 { font-family: var(--font-display); margin-bottom: 24px; font-size: 1.5rem; }
+    .modal-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; z-index: 10;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+
+    /* Participant panel */
+    .participant-panel { margin-top: 24px; }
+    .participant-panel h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px; }
+
+    .solo-row, .team-member-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); margin-bottom: 8px;
+    }
+    .solo-row:hover, .team-member-row:hover { border-color: var(--border-hover); }
+    .p-name { font-weight: 600; font-size: 0.95rem; }
+    .p-email { font-size: 0.8rem; color: var(--text-muted); }
+    .p-college { font-size: 0.8rem; color: var(--text-secondary); }
+
+    .team-box {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden;
+    }
+    .team-box-header {
+      padding: 12px 16px; background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, transparent 60%);
+      border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;
+    }
+    .team-box-header h4 { font-family: var(--font-display); font-size: 1rem; }
+    .team-box-body { padding: 12px; }
+
+    /* Notify form */
+    .notify-section {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 20px; margin-top: 24px;
+    }
+    .notify-section h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px; display:flex; align-items:center; gap:8px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="admin-dashboard.html">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>🛠️ Manage <span class="highlight">Events</span></h1>
+        <p>Edit details, view participants, and send notifications</p>
+      </div>
+    </div>
+
+    <div class="container" style="padding-bottom: 80px;">
+      <div id="eventGrid" class="grid-3">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading events...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+      <h2>✏️ Edit Event</h2>
+      <form id="editForm">
+        <input type="hidden" id="editEventId">
+        <div class="form-group"><label>Title</label><input type="text" id="editTitle" class="form-input" required></div>
+        <div class="form-group"><label>Description</label><textarea id="editDesc" class="form-input" rows="3"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Category</label>
+            <select id="editCategory" class="form-input">
+              <option value="Other">Other</option><option value="Hackathon">Hackathon</option>
+              <option value="Workshop">Workshop</option><option value="Cultural">Cultural</option>
+              <option value="Sports">Sports</option><option value="Seminar">Seminar</option>
+              <option value="Competition">Competition</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Venue</label><input type="text" id="editVenue" class="form-input" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="editDate" class="form-input" required></div>
+          <div class="form-group"><label>Price (₹)</label><input type="number" id="editPrice" class="form-input" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Start Time</label><input type="text" id="editStartTime" class="form-input" placeholder="e.g. 10:00 AM"></div>
+          <div class="form-group"><label>End Time</label><input type="text" id="editEndTime" class="form-input" placeholder="e.g. 5:00 PM"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Contact Email</label><input type="email" id="editContactEmail" class="form-input"></div>
+          <div class="form-group"><label>Contact Phone</label><input type="text" id="editContactPhone" class="form-input"></div>
+        </div>
+        <div class="form-group"><label>Rules</label><textarea id="editRules" class="form-input" rows="2"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>Team Event?</label>
+            <select id="editIsTeam" class="form-input"><option value="false">No</option><option value="true">Yes</option></select>
+          </div>
+          <div class="form-group"><label>Team Size</label><input type="number" id="editTeamSize" class="form-input" min="1" value="1"></div>
+        </div>
+        <div class="form-group"><label>Max Participants</label><input type="number" id="editMaxPart" class="form-input" min="1" placeholder="Leave empty for unlimited"></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">💾 Save Changes</button>
+        <p id="editMsg" class="msg"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Participants Modal -->
+  <div class="modal-overlay" id="participantsModal">
+    <div class="modal-card" style="max-width: 720px;">
+      <button class="modal-close" onclick="closeParticipants()">✕</button>
+      <h2 id="pModalTitle">Participants</h2>
+      <div id="participantContent">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+      </div>
+
+      <!-- Notify Section -->
+      <div class="notify-section">
+        <h3>📧 Send Notification</h3>
+        <div class="form-group"><label>Subject</label><input type="text" id="notifySubject" class="form-input" placeholder="Important update about the event"></div>
+        <div class="form-group"><label>Message (HTML supported)</label><textarea id="notifyBody" class="form-input" rows="4" placeholder="<h3>Hello!</h3><p>Your message here...</p>"></textarea></div>
+        <div class="btn-group" style="justify-content: flex-start;">
+          <button onclick="sendNotifyAll()" class="btn btn-primary btn-sm" id="notifyAllBtn">📧 Send to All Participants</button>
+        </div>
+        <p id="notifyMsg" class="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    let currentEventId = null;
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+
+    // ── Load all events ──
+    async function loadEvents() {
+      try {
+        const res = await fetch("http://localhost:5000/api/events");
+        const events = await res.json();
+        const grid = document.getElementById("eventGrid");
+
+        if (!events.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No events yet.</p></div>'; return; }
+
+        grid.innerHTML = "";
+        events.forEach((event, i) => {
+          const dateStr = new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+          const card = document.createElement("div");
+          card.className = "manage-card";
+          card.style.opacity = "0";
+          card.onclick = (e) => {
+            if (!e.target.closest(".edit-btn")) openParticipants(event._id, event.title);
+          };
+
+          const catBadge = event.category && event.category !== "Other"
+            ? `<span class="badge" style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); color:var(--purple-accent); font-size:0.7rem;">${event.category}</span>` : '';
+          const typeBadge = event.isTeamEvent
+            ? `<span class="badge badge-team" style="font-size:0.7rem;">Team (${event.teamSize})</span>`
+            : '<span class="badge badge-solo" style="font-size:0.7rem;">Solo</span>';
+
+          card.innerHTML = `
+            <div class="manage-card-top">
+              <div>
+                <div style="display:flex; gap:6px; margin-bottom:4px;">${catBadge} ${typeBadge}</div>
+                <h3>${event.title}</h3>
+              </div>
+              <button class="btn btn-outline-green btn-sm edit-btn" onclick="openEdit('${event._id}')">✏️ Edit</button>
+            </div>
+            <div class="manage-card-body">
+              <div class="manage-card-meta">
+                <span>📅 ${dateStr}${event.startTime ? ' · ' + event.startTime : ''}</span>
+                <span>📍 ${event.venue}</span>
+                <span>${event.price > 0 ? '💰 ₹' + event.price : '🆓 Free'}</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Click to view participants & send emails</p>
+            </div>
+          `;
+          grid.appendChild(card);
+          gsap.to(card, { opacity: 1, duration: 0.5, delay: i * 0.06, ease: "power3.out" });
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById("eventGrid").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load events</p></div>';
+      }
+    }
+
+    // ── EDIT EVENT ──
+    async function openEdit(eventId) {
+      currentEventId = eventId;
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${eventId}`);
+        const ev = await res.json();
+
+        document.getElementById("editEventId").value = ev._id;
+        document.getElementById("editTitle").value = ev.title || "";
+        document.getElementById("editDesc").value = ev.description || "";
+        document.getElementById("editCategory").value = ev.category || "Other";
+        document.getElementById("editVenue").value = ev.venue || "";
+        document.getElementById("editDate").value = ev.date ? ev.date.split("T")[0] : "";
+        document.getElementById("editPrice").value = ev.price || 0;
+        document.getElementById("editStartTime").value = ev.startTime || "";
+        document.getElementById("editEndTime").value = ev.endTime || "";
+        document.getElementById("editContactEmail").value = ev.contactEmail || "";
+        document.getElementById("editContactPhone").value = ev.contactPhone || "";
+        document.getElementById("editRules").value = ev.rules || "";
+        document.getElementById("editIsTeam").value = ev.isTeamEvent ? "true" : "false";
+        document.getElementById("editTeamSize").value = ev.teamSize || 1;
+        document.getElementById("editMaxPart").value = ev.maxParticipants || "";
+        document.getElementById("editMsg").innerText = "";
+
+        document.getElementById("editModal").classList.add("active");
+        gsap.from(".modal-card", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" });
+      } catch (err) {
+        alert("Failed to load event details");
+      }
+    }
+
+    function closeEdit() { document.getElementById("editModal").classList.remove("active"); }
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("editMsg");
+      const btn = e.target.querySelector("button[type=submit]");
+      btn.textContent = "⏳ Saving..."; btn.disabled = true;
+
+      const payload = {
+        title: document.getElementById("editTitle").value,
+        description: document.getElementById("editDesc").value,
+        category: document.getElementById("editCategory").value,
+        venue: document.getElementById("editVenue").value,
+        date: document.getElementById("editDate").value,
+        price: Number(document.getElementById("editPrice").value),
+        startTime: document.getElementById("editStartTime").value,
+        endTime: document.getElementById("editEndTime").value,
+        contactEmail: document.getElementById("editContactEmail").value,
+        contactPhone: document.getElementById("editContactPhone").value,
+        rules: document.getElementById("editRules").value,
+        isTeamEvent: document.getElementById("editIsTeam").value === "true",
+        teamSize: Number(document.getElementById("editTeamSize").value),
+        maxParticipants: document.getElementById("editMaxPart").value ? Number(document.getElementById("editMaxPart").value) : undefined
+      };
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${document.getElementById("editEventId").value}`, {
+          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.innerText = "✅ Event updated!"; msg.className = "msg msg-success";
+          setTimeout(() => { closeEdit(); loadEvents(); }, 1000);
+        } else {
+          msg.innerText = data.message; msg.className = "msg msg-error";
+        }
+      } catch (err) { msg.innerText = "Server error"; msg.className = "msg msg-error"; }
+      btn.textContent = "💾 Save Changes"; btn.disabled = false;
+    });
+
+    // ── PARTICIPANTS ──
+    async function openParticipants(eventId, title) {
+      currentEventId = eventId;
+      document.getElementById("pModalTitle").textContent = `👥 ${title} — Participants`;
+      document.getElementById("participantContent").innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading participants...</p></div>';
+      document.getElementById("notifyMsg").innerText = "";
+      document.getElementById("participantsModal").classList.add("active");
+      gsap.from("#participantsModal .modal-card", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" });
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${eventId}/participants`);
+        const data = await res.json();
+        const container = document.getElementById("participantContent");
+        let html = "";
+
+        if (data.soloParticipants.length === 0 && data.teams.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No approved participants yet.</p></div>';
+          return;
+        }
+
+        // Solo
+        if (data.soloParticipants.length > 0) {
+          html += `<div class="participant-panel"><h3>👤 Solo Participants (${data.soloParticipants.length})</h3>`;
+          data.soloParticipants.forEach(p => {
+            html += `
+              <div class="solo-row">
+                <div>
+                  <div class="p-name">${p.name}</div>
+                  <div class="p-email">${p.email}</div>
+                  ${p.college ? `<div class="p-college">🏫 ${p.college}</div>` : ''}
+                </div>
+                <button onclick="sendMailTo(['${p.email}'], this)" class="btn btn-outline-green btn-sm">📧 Mail</button>
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+
+        // Teams
+        if (data.teams.length > 0) {
+          html += `<div class="participant-panel" style="margin-top:20px;"><h3>👥 Teams (${data.teams.length})</h3>`;
+          data.teams.forEach(team => {
+            const allEmails = team.members.map(m => `'${m.email}'`).join(",");
+            html += `
+              <div class="team-box">
+                <div class="team-box-header">
+                  <h4>🏷️ ${team.teamName}</h4>
+                  <button onclick="sendMailTo([${allEmails}], this)" class="btn btn-outline-green btn-sm">📧 Mail Team</button>
+                </div>
+                <div class="team-box-body">
+                  ${team.members.map(m => `
+                    <div class="team-member-row">
+                      <div>
+                        <div class="p-name">${m.name}</div>
+                        <div class="p-email">${m.email}</div>
+                        ${m.college ? `<div class="p-college">🏫 ${m.college}</div>` : ''}
+                      </div>
+                      <button onclick="sendMailTo(['${m.email}'], this)" class="btn btn-ghost btn-sm" style="color:var(--green-primary);">📧</button>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        document.getElementById("participantContent").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load participants</p></div>';
+      }
+    }
+
+    function closeParticipants() { document.getElementById("participantsModal").classList.remove("active"); }
+
+    // Send mail to specific email(s) using the notify form
+    async function sendMailTo(emails, btn) {
+      const subject = document.getElementById("notifySubject").value;
+      const body = document.getElementById("notifyBody").value;
+
+      if (!subject || !body) {
+        alert("Please fill in the Subject and Message fields at the bottom before sending.");
+        document.getElementById("notifySubject").focus();
+        return;
+      }
+
+      const orig = btn.innerText;
+      btn.innerText = "⏳"; btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${currentEventId}/notify`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject, body, targetEmails: emails })
+        });
+        const data = await res.json();
+        btn.innerText = "✅ Sent";
+        setTimeout(() => { btn.innerText = orig; btn.disabled = false; }, 2000);
+      } catch (err) {
+        alert("Failed to send email");
+        btn.innerText = orig; btn.disabled = false;
+      }
+    }
+
+    // Send to all participants
+    async function sendNotifyAll() {
+      const subject = document.getElementById("notifySubject").value;
+      const body = document.getElementById("notifyBody").value;
+      const msg = document.getElementById("notifyMsg");
+      const btn = document.getElementById("notifyAllBtn");
+
+      if (!subject || !body) { msg.innerText = "Subject and message are required"; msg.className = "msg msg-error"; return; }
+
+      btn.innerText = "⏳ Sending..."; btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/events/${currentEventId}/notify`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject, body })
+        });
+        const data = await res.json();
+        msg.innerText = "✅ " + data.message; msg.className = "msg msg-success";
+        btn.innerText = "📧 Send to All Participants"; btn.disabled = false;
+      } catch (err) {
+        msg.innerText = "Server error"; msg.className = "msg msg-error";
+        btn.innerText = "📧 Send to All Participants"; btn.disabled = false;
+      }
+    }
+
+    // Close modals on ESC
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { closeEdit(); closeParticipants(); }
+    });
+
+    loadEvents();
+  </script>
+</body>
+</html>

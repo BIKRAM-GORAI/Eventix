@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="College Event Management System — Discover, register, and participate in campus events.">
+  <title>EventHub — College Event Management</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="mainNav">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <div class="navbar-links">
+        <button onclick="goLogin()" class="btn btn-secondary btn-sm">Login</button>
+        <button onclick="goSignup()" class="btn btn-primary btn-sm">Sign Up</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <div class="hero-glow"></div>
+    <div class="particles" id="particles"></div>
+    <div class="hero-content">
+      <div class="hero-badge" data-scroll data-scroll-speed="1">
+        <span>Campus Events Platform</span>
+      </div>
+      <h1>
+        <span class="line">Discover & Join</span><br>
+        <span class="line">Campus <span class="highlight">Events</span></span>
+      </h1>
+      <p>Register for solo or team events, receive QR-based tickets, and check in seamlessly. Your complete college event management solution.</p>
+      <div class="btn-group">
+        <button onclick="goSignup()" class="btn btn-primary btn-lg">Get Started →</button>
+        <button onclick="goLogin()" class="btn btn-secondary btn-lg">Login</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works -->
+  <section style="padding: 100px 0;" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>How It <span class="highlight">Works</span></h2>
+        <p>From registration to attendance — we handle everything.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card" data-scroll data-scroll-speed="1">
+          <div class="feature-step">01</div>
+          <h3>Sign Up & Explore</h3>
+          <p>Create your account with OTP verification and browse all available campus events.</p>
+        </div>
+        <div class="feature-card" data-scroll data-scroll-speed="1.5">
+          <div class="feature-step">02</div>
+          <h3>Register & Build Teams</h3>
+          <p>Join solo events instantly or create teams with a unique code. Invite friends to join your team.</p>
+        </div>
+        <div class="feature-card" data-scroll data-scroll-speed="2">
+          <div class="feature-step">03</div>
+          <h3>Get Your QR Ticket</h3>
+          <p>Once approved, each participant gets a unique QR-based PDF ticket sent directly to their email.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Banner -->
+  <section style="padding: 60px 0;">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-card" data-scroll data-scroll-speed="1">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-value" id="countEvents">0</div>
+          <div class="stat-label">Events Hosted</div>
+        </div>
+        <div class="stat-card" data-scroll data-scroll-speed="1.3">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value" id="countTeams">0</div>
+          <div class="stat-label">Teams Created</div>
+        </div>
+        <div class="stat-card" data-scroll data-scroll-speed="1.6">
+          <div class="stat-icon">🎟️</div>
+          <div class="stat-value" id="countTickets">0</div>
+          <div class="stat-label">Tickets Issued</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">⚡ Event<span>Hub</span></div>
+          <p class="footer-desc">Connecting students with campus events. Register, collaborate, and make an impact.</p>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="events.html">Browse Events</a></li>
+            <li><a href="signup.html">Create Account</a></li>
+            <li><a href="login.html">Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>For Organizers</h4>
+          <ul class="footer-links">
+            <li><a href="login.html">Admin Login</a></li>
+            <li><a href="admin-dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 EventHub. Built for campus life.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script>
+    function goSignup() { window.location.href = "signup.html"; }
+    function goLogin() { window.location.href = "login.html"; }
+
+    // ── Locomotive Scroll ──
+    const scroll = new LocomotiveScroll({
+      el: document.querySelector('body'),
+      smooth: true,
+      smartphone: { smooth: true },
+      tablet: { smooth: true }
+    });
+
+    // ── GSAP Animations ──
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero entrance
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.from(".hero-badge", { opacity: 0, y: 30, duration: 0.8, delay: 0.3 })
+      .from(".hero h1 .line", { opacity: 0, y: 50, duration: 0.8, stagger: 0.15 }, "-=0.4")
+      .from(".hero p", { opacity: 0, y: 30, duration: 0.7 }, "-=0.4")
+      .from(".hero .btn-group", { opacity: 0, y: 30, duration: 0.7 }, "-=0.3");
+
+    // Feature cards
+    gsap.utils.toArray(".feature-card").forEach((card, i) => {
+      gsap.from(card, {
+        scrollTrigger: { trigger: card, start: "top 85%", toggleActions: "play none none none" },
+        opacity: 0,
+        y: 60,
+        duration: 0.8,
+        delay: i * 0.15
+      });
+    });
+
+    // Stat cards
+    gsap.utils.toArray(".stat-card").forEach((card, i) => {
+      gsap.from(card, {
+        scrollTrigger: { trigger: card, start: "top 85%", toggleActions: "play none none none" },
+        opacity: 0,
+        scale: 0.9,
+        duration: 0.6,
+        delay: i * 0.12
+      });
+    });
+
+    // ── Counter Animation ──
+    function animateCounter(el, target, duration = 2000) {
+      let start = 0;
+      const step = (timestamp) => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        el.textContent = Math.floor(progress * target);
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    ScrollTrigger.create({
+      trigger: ".stats-grid",
+      start: "top 80%",
+      onEnter: () => {
+        animateCounter(document.getElementById("countEvents"), 50);
+        animateCounter(document.getElementById("countTeams"), 120);
+        animateCounter(document.getElementById("countTickets"), 340);
+      },
+      once: true
+    });
+
+    // ── Floating Particles ──
+    const particlesContainer = document.getElementById("particles");
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.animationDuration = (Math.random() * 10 + 8) + "s";
+      p.style.animationDelay = (Math.random() * 5) + "s";
+      p.style.width = (Math.random() * 3 + 1) + "px";
+      p.style.height = p.style.width;
+      particlesContainer.appendChild(p);
+    }
+
+    // ── Navbar scroll effect ──
+    window.addEventListener("scroll", () => {
+      const nav = document.getElementById("mainNav");
+      nav.style.borderBottomColor = window.scrollY > 50 ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)";
+    });
+  </script>
+</body>
+</html>

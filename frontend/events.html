@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore Events — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <div class="navbar-links">
+        <a href="events.html" style="color: var(--green-primary);">Explore</a>
+        <a href="my-events.html">My Events</a>
+        <button onclick="logout()" class="btn btn-ghost btn-sm" style="color: var(--red-accent);">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>Explore <span class="highlight">Events</span></h1>
+        <p>Discover and register for campus events happening near you</p>
+      </div>
+    </div>
+
+    <!-- Event Grid -->
+    <div class="container" style="padding-bottom: 80px;">
+      <div id="eventList" class="grid-3">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading events...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script>
+    const userId = localStorage.getItem("userId");
+    if (!userId) window.location.href = "login.html";
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    async function loadDashboard() {
+      try {
+        const isAdmin = userId === "65c123456789abcdef123456";
+
+        const eventRes = await fetch("http://localhost:5000/api/events");
+        const events = await eventRes.json();
+
+        let registeredEventIds = new Set();
+
+        if (!isAdmin) {
+          const regRes = await fetch(`http://localhost:5000/api/registration/user/${userId}`);
+          const myRegistrations = await regRes.json();
+          if (Array.isArray(myRegistrations)) {
+            registeredEventIds = new Set(myRegistrations.map((reg) => reg.eventId._id));
+          }
+        }
+
+        const container = document.getElementById("eventList");
+        container.innerHTML = "";
+
+        if (events.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No events available right now. Check back soon!</p></div>';
+          return;
+        }
+
+        events.forEach((event, i) => {
+          const isRegistered = registeredEventIds.has(event._id);
+          const eventCard = document.createElement("div");
+          eventCard.className = "event-card";
+          eventCard.style.opacity = "0";
+          eventCard.style.transform = "translateY(30px)";
+
+          const tags = [];
+          if (event.category && event.category !== "Other") tags.push(`<span class="event-card-tag" style="background:rgba(139,92,246,0.1); color:#8b5cf6; border-color:rgba(139,92,246,0.2);">${event.category}</span>`);
+          if (event.isTeamEvent) tags.push(`<span class="event-card-tag team">👥 Team (${event.teamSize})</span>`);
+          else tags.push('<span class="event-card-tag">👤 Solo</span>');
+          if (event.price > 0) tags.push(`<span class="event-card-tag paid">₹${event.price}</span>`);
+          else tags.push('<span class="event-card-tag" style="background:rgba(0,255,65,0.08);">Free</span>');
+
+          let buttonHTML = "";
+          if (isAdmin) {
+            buttonHTML = `<button onclick="window.location.href='admin-approvals.html'" class="btn btn-secondary btn-sm" style="flex:1;">Manage</button>`;
+          } else if (isRegistered) {
+            buttonHTML = `<button disabled class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;">Registered ✓</button>
+                          <button onclick="window.location.href='my-events.html'" class="btn btn-outline-green btn-sm" style="flex:1;">View Status</button>`;
+          } else {
+            buttonHTML = `<button onclick="handleRegistration('${event._id}', ${event.isTeamEvent})" class="btn btn-primary btn-sm" style="flex:1;">Register Now →</button>`;
+          }
+
+          eventCard.innerHTML = `
+            <div class="event-card-gradient"></div>
+            <div class="event-card-body">
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">${tags.join("")}</div>
+              <h3>${event.title}</h3>
+              <div class="event-card-meta">
+                <span>📍 ${event.venue}</span>
+                <span>📅 ${new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${event.startTime ? ' · ' + event.startTime : ''}</span>
+                <span>🎯 ${event.isTeamEvent ? `Team of ${event.teamSize}` : "Solo event"}</span>
+              </div>
+              <div class="event-card-actions">${buttonHTML}</div>
+            </div>
+          `;
+          container.appendChild(eventCard);
+
+          // Animate in
+          gsap.to(eventCard, { opacity: 1, y: 0, duration: 0.6, delay: i * 0.1, ease: "power3.out" });
+        });
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById("eventList").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error loading events. Is the backend running?</p></div>';
+      }
+    }
+
+    async function handleRegistration(eventId, isTeam) {
+      localStorage.setItem("selectedEventId", eventId);
+
+      if (isTeam) {
+        try {
+          const teamRes = await fetch(`http://localhost:5000/api/team/user/${userId}`);
+          const myTeams = await teamRes.json();
+          const existingTeam = myTeams.find((t) => t.eventId._id === eventId);
+
+          if (existingTeam) {
+            alert("You are already in a team for this event.");
+            window.location.href = "my-events.html";
+            return;
+          }
+        } catch (e) {
+          console.error("Team check failed", e);
+        }
+        window.location.href = "team-selection.html";
+      } else {
+        window.location.href = "solo-registration.html";
+      }
+    }
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+    gsap.from(".page-header p", { opacity: 0, y: 20, duration: 0.6, delay: 0.2, ease: "power3.out" });
+
+    loadDashboard();
+  </script>
+</body>
+</html>

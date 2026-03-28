@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="events.html">Preview Events</a>
+        <button onclick="localStorage.clear(); window.location.href='login.html'" class="btn btn-danger btn-sm">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>🛡️ Command <span class="highlight">Center</span></h1>
+        <p>Manage events, approve registrations, and scan tickets</p>
+      </div>
+    </div>
+
+    <div class="container" style="max-width: 960px; padding-bottom: 80px;">
+      <div class="admin-grid">
+        <!-- Create Event -->
+        <div class="admin-card fade-in stagger-1" onclick="window.location.href='admin-create-event.html'" style="cursor:pointer;">
+          <div class="card-icon">📝</div>
+          <h3>Create Event</h3>
+          <p>Post new events, set fees, team sizes, and venue details.</p>
+          <button class="btn btn-primary btn-block">Create New Event →</button>
+        </div>
+
+        <!-- Approvals -->
+        <div class="admin-card fade-in stagger-2" onclick="window.location.href='admin-approvals.html'" style="cursor:pointer;">
+          <div class="card-icon">✅</div>
+          <h3>Approvals</h3>
+          <p>Review and approve pending student registrations.</p>
+          <button class="btn btn-outline-green btn-block">Review Pending →</button>
+        </div>
+
+        <!-- Scanner -->
+        <div class="admin-card fade-in stagger-3" onclick="window.location.href='admin-scanner.html'" style="cursor:pointer;">
+          <div class="card-icon">📷</div>
+          <h3>QR Scanner</h3>
+          <p>Scan participant QR codes at the event gate for check-in.</p>
+          <button class="btn btn-secondary btn-block">Open Scanner →</button>
+        </div>
+
+        <!-- Attendance Analytics -->
+        <div class="admin-card fade-in stagger-4" onclick="window.location.href='admin-attendance.html'" style="cursor:pointer;">
+          <div class="card-icon">📊</div>
+          <h3>Attendance</h3>
+          <p>View event-wise check-in data, team stats, and attendance rates.</p>
+          <button class="btn btn-secondary btn-block">View Analytics →</button>
+        </div>
+
+        <!-- Manage Events -->
+        <div class="admin-card fade-in stagger-5" onclick="window.location.href='admin-manage-events.html'" style="cursor:pointer;">
+          <div class="card-icon">🛠️</div>
+          <h3>Manage Events</h3>
+          <p>Edit event details, view participants, and send notifications.</p>
+          <button class="btn btn-secondary btn-block">Manage Events →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+    gsap.from(".page-header p", { opacity: 0, y: 20, duration: 0.6, delay: 0.15, ease: "power3.out" });
+    gsap.from(".admin-card", { opacity: 0, y: 50, duration: 0.7, stagger: 0.12, ease: "power3.out", delay: 0.3 });
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Management — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <div class="navbar-links">
+        <a href="my-events.html">← My Events</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="container-md" style="padding-top: 40px; padding-bottom: 80px;">
+      <div class="card" style="padding: 32px;">
+        <h2 style="font-family: var(--font-display); text-align: center; margin-bottom: 32px;">Team Management</h2>
+
+        <!-- Create Team -->
+        <div style="margin-bottom: 32px;">
+          <h3 style="font-family: var(--font-display); margin-bottom: 12px;">🚀 Create Team</h3>
+          <div style="display: flex; gap: 12px;">
+            <input type="text" id="teamName" class="form-input" placeholder="Team Name" style="flex:1;">
+            <button onclick="createTeam()" class="btn btn-primary">Create</button>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-color); margin: 24px 0;"></div>
+
+        <!-- Join Team -->
+        <div style="margin-bottom: 32px;">
+          <h3 style="font-family: var(--font-display); margin-bottom: 12px;">🤝 Join Team</h3>
+          <div style="display: flex; gap: 12px;">
+            <input type="text" id="teamCode" class="form-input" placeholder="Enter Team Code" style="flex:1; font-family:'Space Grotesk',monospace; letter-spacing:0.1em;">
+            <button onclick="joinTeam()" class="btn btn-outline-green">Join</button>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-color); margin: 24px 0;"></div>
+
+        <!-- Team Info -->
+        <div>
+          <h3 style="font-family: var(--font-display); margin-bottom: 12px;">📋 Team Info</h3>
+          <div id="teamDetails" style="color: var(--text-secondary);">No team loaded</div>
+          <button id="registerBtn" style="display: none; margin-top: 16px;" onclick="registerTeam()" class="btn btn-primary btn-block">Register Team →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const userId = localStorage.getItem("userId");
+    const eventId = localStorage.getItem("selectedEventId");
+
+    let currentTeam = null;
+
+    async function createTeam() {
+      const teamName = document.getElementById("teamName").value;
+      const res = await fetch("http://localhost:5000/api/team/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamName, leaderId: userId, eventId }),
+      });
+      const data = await res.json();
+      alert(data.message);
+      localStorage.setItem("teamId", data.team._id);
+      displayTeam();
+    }
+
+    async function joinTeam() {
+      const teamCode = document.getElementById("teamCode").value;
+      const res = await fetch("http://localhost:5000/api/team/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamCode, userId }),
+      });
+      const data = await res.json();
+      alert(data.message);
+      localStorage.setItem("teamId", data.team._id);
+      displayTeam();
+    }
+
+    function displayTeam() {
+      if (!currentTeam) return;
+      const members = currentTeam.members.length;
+      const max = currentTeam.teamSize || 4;
+      document.getElementById("teamDetails").innerHTML = `
+        <p>Team Code: <span class="team-code">${currentTeam.teamCode}</span></p>
+        <p style="margin-top:8px;">Members: ${members} / ${max}</p>
+      `;
+      if (members >= max) {
+        document.getElementById("registerBtn").style.display = "block";
+      }
+    }
+
+    async function registerTeam() {
+      const res = await fetch("http://localhost:5000/api/registration/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: currentTeam._id, eventId }),
+      });
+      const data = await res.json();
+      alert(data.message);
+    }
+
+    async function loadExistingTeam() {
+      const teamId = localStorage.getItem("teamId");
+      if (!teamId) return;
+      const res = await fetch(`http://localhost:5000/api/team/${teamId}`);
+      const data = await res.json();
+      currentTeam = data;
+      displayTeam();
+    }
+
+    loadExistingTeam();
+  </script>
+</body>
+</html>

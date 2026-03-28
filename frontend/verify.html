@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Email — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-glow"></div>
+    <div class="auth-card fade-in" style="text-align: center;">
+      <div style="margin-bottom: 24px;">
+        <a href="index.html" class="navbar-brand" style="justify-content:center; font-size:1.6rem;">⚡ Event<span>Hub</span></a>
+      </div>
+      <div style="font-size: 3rem; margin-bottom: 16px;">📧</div>
+      <h2>Verify Your Email</h2>
+      <p class="subtitle">We sent a 6-digit OTP to your email address</p>
+
+      <div class="form-group">
+        <input type="text" id="otp" class="form-input" placeholder="Enter 6-digit OTP" maxlength="6"
+          style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; font-family: 'Space Grotesk', monospace;">
+      </div>
+
+      <button onclick="verify()" class="btn btn-primary btn-block btn-lg" id="verifyBtn">Verify OTP →</button>
+
+      <p id="msg" class="msg"></p>
+
+      <div class="auth-footer" style="margin-top: 20px;">
+        <a href="signup.html">← Back to Signup</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".auth-card", { opacity: 0, y: 40, duration: 0.8, ease: "power3.out" });
+
+    async function verify() {
+      const userId = localStorage.getItem("pendingUserId");
+      const otp = document.getElementById("otp").value;
+      const msg = document.getElementById("msg");
+      const btn = document.getElementById("verifyBtn");
+
+      if (!userId) {
+        alert("Session expired. Please signup again.");
+        window.location.href = "signup.html";
+        return;
+      }
+
+      btn.textContent = "Verifying...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, otp })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.innerText = "✅ Verification successful!";
+          msg.className = "msg msg-success";
+          localStorage.removeItem("pendingUserId");
+          setTimeout(() => { window.location.href = "login.html"; }, 1500);
+        } else {
+          msg.innerText = data.message;
+          msg.className = "msg msg-error";
+          btn.textContent = "Verify OTP →";
+          btn.disabled = false;
+        }
+      } catch (error) {
+        msg.innerText = "Error verifying OTP";
+        msg.className = "msg msg-error";
+        btn.textContent = "Verify OTP →";
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("otp").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verify();
+    });
+  </script>
+</body>
+</html>

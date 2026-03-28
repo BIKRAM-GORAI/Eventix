@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner — EventHub Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="admin-dashboard.html">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>🎟️ Entry Gate <span class="highlight">Scanner</span></h1>
+        <p>Scan participant QR codes for event check-in</p>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="scanner-wrapper">
+        <!-- Scanner View -->
+        <div id="scannerView">
+          <div class="scanner-frame">
+            <div id="reader" style="width: 100%;"></div>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Point the camera at the participant's QR ticket</p>
+        </div>
+
+        <!-- Result View -->
+        <div id="result" style="display: none;">
+          <div id="resultCard" class="scanner-result">
+            <div id="resultIcon" style="font-size: 4rem; margin-bottom: 16px;"></div>
+            <h2 id="statusTitle" style="font-family: var(--font-display); margin-bottom: 12px;"></h2>
+            <p id="participantName" style="font-size: 1.1rem; margin-bottom: 4px;"></p>
+            <p id="eventName" style="color: var(--text-secondary); margin-bottom: 24px;"></p>
+            <button onclick="resetScanner()" class="btn btn-primary">Scan Next Ticket →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+    gsap.from(".scanner-frame", { opacity: 0, scale: 0.95, duration: 0.6, delay: 0.3, ease: "power3.out" });
+
+    const html5QrCode = new Html5Qrcode("reader");
+    const resultDiv = document.getElementById("result");
+    const scannerView = document.getElementById("scannerView");
+
+    const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      qrConfig,
+      onScanSuccess
+    ).catch(err => {
+      console.error("Camera Error:", err);
+      document.getElementById("reader").innerHTML = `
+        <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 3rem; margin-bottom: 16px;">📷</div>
+          <p>Camera access denied. Ensure you are using HTTPS or localhost.</p>
+        </div>
+      `;
+    });
+
+    async function onScanSuccess(decodedText) {
+      await html5QrCode.pause();
+
+      try {
+        const res = await fetch("http://localhost:5000/api/attendance/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationId: decodedText })
+        });
+
+        const data = await res.json();
+        showResult(res.ok, data);
+
+      } catch (err) {
+        console.error(err);
+        showResult(false, { message: "Server Error checking ticket." });
+      }
+    }
+
+    function showResult(isSuccess, data) {
+      scannerView.style.display = "none";
+      resultDiv.style.display = "block";
+
+      const resultCard = document.getElementById("resultCard");
+      const icon = document.getElementById("resultIcon");
+      const title = document.getElementById("statusTitle");
+      const name = document.getElementById("participantName");
+      const event = document.getElementById("eventName");
+
+      if (isSuccess) {
+        resultCard.className = "scanner-result success";
+        icon.textContent = "✅";
+        title.textContent = "ACCESS GRANTED";
+        title.style.color = "var(--green-primary)";
+
+        let details = `<strong>${data.participant || "Verified"}</strong>`;
+        if (data.email) details += `<br><span style="font-size:0.85rem; color:var(--text-secondary);">${data.email}</span>`;
+        if (data.college) details += `<br><span style="font-size:0.85rem; color:var(--text-secondary);">🏫 ${data.college}</span>`;
+        name.innerHTML = details;
+
+        let eventInfo = data.event || "";
+        if (data.scannedAt) eventInfo += `<br><span style="font-size:0.85rem; color:var(--text-secondary);">Scanned at ${new Date(data.scannedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>`;
+        event.innerHTML = eventInfo;
+      } else {
+        resultCard.className = "scanner-result denied";
+        icon.textContent = "❌";
+        title.textContent = "ACCESS DENIED";
+        title.style.color = "var(--red-accent)";
+        name.textContent = data.message || "Invalid Ticket";
+        event.textContent = data.participant ? "Participant: " + data.participant : "";
+      }
+
+      gsap.from(resultCard, { opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.7)" });
+    }
+
+    function resetScanner() {
+      resultDiv.style.display = "none";
+      scannerView.style.display = "block";
+      html5QrCode.resume();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Test — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-card" style="text-align: center;">
+      <h2 style="font-family: var(--font-display); margin-bottom: 16px;">Your Ticket QR</h2>
+      <img id="qrImage" width="300" style="border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <p id="status" style="color: var(--text-secondary); margin-top: 16px;">Loading QR code...</p>
+    </div>
+  </div>
+
+  <script>
+    const registrationId = "69c423d0f9e6ab1b39f6434b";
+
+    fetch(`http://localhost:5000/api/registration/${registrationId}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("qrImage").src = data.qrCode;
+        document.getElementById("status").textContent = "Scan this QR at the event entrance";
+      })
+      .catch(err => {
+        console.log(err);
+        document.getElementById("status").textContent = "Failed to load QR code";
+      });
+  </script>
+</body>
+</html>

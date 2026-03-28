@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Event — EventHub Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="admin-dashboard.html" class="navbar-brand">⚡ Event<span>Hub</span> <span class="badge badge-approved" style="font-size:0.7rem; margin-left:8px;">ADMIN</span></a>
+      <div class="navbar-links">
+        <a href="admin-dashboard.html">← Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="container-md" style="padding-top: 40px; padding-bottom: 80px;">
+      <div class="card" style="padding: 40px; border-color: var(--green-border);">
+        <div style="text-align:center; margin-bottom: 32px;">
+          <div style="font-size: 2.5rem; margin-bottom: 8px;">📝</div>
+          <h2 style="font-family: var(--font-display); font-size: 1.8rem;">Create New Event</h2>
+          <p style="color: var(--text-secondary);">Fill in the details to publish a new event</p>
+        </div>
+
+        <form id="eventForm">
+          <div class="form-group">
+            <label>Event Title *</label>
+            <input type="text" name="title" class="form-input" placeholder="e.g. Annual Hackathon 2026" required>
+          </div>
+
+          <div class="form-group">
+            <label>Description *</label>
+            <textarea name="description" class="form-input" rows="4" placeholder="Describe the event, rules, prizes..." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select name="category" class="form-input">
+                <option value="Other">Select Category</option>
+                <option value="Hackathon">🧑‍💻 Hackathon</option>
+                <option value="Workshop">🔧 Workshop</option>
+                <option value="Cultural">🎭 Cultural</option>
+                <option value="Sports">⚽ Sports</option>
+                <option value="Seminar">📚 Seminar</option>
+                <option value="Competition">🏆 Competition</option>
+                <option value="Other">📌 Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Venue *</label>
+              <input type="text" name="venue" class="form-input" placeholder="Auditorium, Lab B..." required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Event Date *</label>
+              <input type="date" name="date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Registration Fee (₹)</label>
+              <input type="number" name="price" class="form-input" value="0" min="0" required>
+              <p class="form-hint">Set to 0 for free events</p>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" name="startTime" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" name="endTime" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input type="email" name="contactEmail" class="form-input" placeholder="organizer@college.edu">
+            </div>
+            <div class="form-group">
+              <label>Contact Phone</label>
+              <input type="text" name="contactPhone" class="form-input" placeholder="e.g. 9876543210">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Rules & Guidelines</label>
+            <textarea name="rules" class="form-input" rows="3" placeholder="Any rules participants should know..."></textarea>
+          </div>
+
+          <div class="form-checkbox" style="margin-bottom: 20px;">
+            <input type="checkbox" id="isTeamEvent" name="isTeamEvent">
+            <span>This is a Team Event</span>
+          </div>
+
+          <div id="teamSizeSection" style="display: none; margin-bottom: 20px;">
+            <div class="form-group">
+              <label>Maximum Team Size</label>
+              <input type="number" id="teamSize" name="teamSize" class="form-input" value="2" min="2">
+              <p class="form-hint">e.g., 4 for a Hackathon, 2 for a Debate</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Max Participants</label>
+            <input type="number" name="maxParticipants" class="form-input" placeholder="Leave empty for unlimited" min="1">
+            <p class="form-hint">Total number of participants/teams allowed</p>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg">🚀 Publish Event</button>
+        </form>
+
+        <p id="msg" class="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".card", { opacity: 0, y: 40, duration: 0.8, ease: "power3.out" });
+
+    const teamCheckbox = document.getElementById("isTeamEvent");
+    const teamSection = document.getElementById("teamSizeSection");
+
+    teamCheckbox.addEventListener("change", function () {
+      teamSection.style.display = this.checked ? "block" : "none";
+      if (this.checked) {
+        gsap.from(teamSection, { opacity: 0, height: 0, duration: 0.3, ease: "power2.out" });
+      }
+    });
+
+    // Format time from 24h input (HH:MM) to readable string
+    function formatTime(timeStr) {
+      if (!timeStr) return "";
+      const [h, m] = timeStr.split(":");
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const h12 = hour % 12 || 12;
+      return `${h12}:${m} ${ampm}`;
+    }
+
+    document.getElementById("eventForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      const adminId = localStorage.getItem("userId");
+      const btn = e.target.querySelector("button[type=submit]");
+
+      if (!adminId) {
+        alert("Session expired. Please login again.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      btn.textContent = "⏳ Publishing...";
+      btn.disabled = true;
+
+      const formData = new FormData(e.target);
+      const isTeam = document.getElementById("isTeamEvent").checked;
+
+      const payload = {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        category: formData.get("category"),
+        venue: formData.get("venue"),
+        date: formData.get("date"),
+        startTime: formatTime(formData.get("startTime")),
+        endTime: formatTime(formData.get("endTime")),
+        price: Number(formData.get("price")),
+        isTeamEvent: isTeam,
+        teamSize: isTeam ? Number(formData.get("teamSize")) : 1,
+        contactEmail: formData.get("contactEmail"),
+        contactPhone: formData.get("contactPhone"),
+        rules: formData.get("rules"),
+        maxParticipants: formData.get("maxParticipants") ? Number(formData.get("maxParticipants")) : undefined,
+        createdBy: adminId,
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/api/events/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msg.innerText = "✅ Event Created Successfully!";
+          msg.className = "msg msg-success";
+          setTimeout(() => { window.location.href = "admin-dashboard.html"; }, 1500);
+        } else {
+          msg.innerText = data.message;
+          msg.className = "msg msg-error";
+          btn.textContent = "🚀 Publish Event";
+          btn.disabled = false;
+        }
+      } catch (error) {
+        console.error(error);
+        msg.innerText = "Server error. Check backend console.";
+        msg.className = "msg msg-error";
+        btn.textContent = "🚀 Publish Event";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Events — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .team-expand-btn {
+      background: none;
+      border: none;
+      color: var(--green-primary);
+      font-family: var(--font-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      transition: opacity var(--transition-fast);
+    }
+    .team-expand-btn:hover { opacity: 0.8; }
+    .team-expand-btn .arrow {
+      transition: transform var(--transition-fast);
+      display: inline-block;
+    }
+    .team-expand-btn.open .arrow { transform: rotate(90deg); }
+
+    .team-members-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .team-members-panel.open {
+      max-height: 600px;
+    }
+
+    .member-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .member-row:last-child { margin-bottom: 0; }
+
+    .member-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .member-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .member-email {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .member-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: rgba(0, 255, 65, 0.1);
+      color: var(--green-primary);
+      border: 1px solid var(--green-border);
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <div class="navbar-links">
+        <a href="events.html">Explore</a>
+        <a href="my-events.html" style="color: var(--green-primary);">My Events</a>
+        <button onclick="localStorage.clear(); window.location.href='login.html'" class="btn btn-ghost btn-sm" style="color: var(--red-accent);">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>My <span class="highlight">Dashboard</span></h1>
+        <p>Track your registrations, teams, and tickets</p>
+      </div>
+    </div>
+
+    <div class="container" style="padding-bottom: 80px;">
+      <div id="dashboardContent">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading your event data...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    const userId = localStorage.getItem("userId");
+    if (!userId) window.location.href = "login.html";
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+    gsap.from(".page-header p", { opacity: 0, y: 20, duration: 0.6, delay: 0.2, ease: "power3.out" });
+
+    function toggleMembers(regId) {
+      const panel = document.getElementById(`members-${regId}`);
+      const btn = document.getElementById(`toggle-${regId}`);
+      panel.classList.toggle("open");
+      btn.classList.toggle("open");
+    }
+
+    async function loadMyEvents() {
+      try {
+        const container = document.getElementById("dashboardContent");
+        container.innerHTML = "";
+
+        const [regRes, teamRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/registration/user/${userId}`),
+          fetch(`http://localhost:5000/api/team/user/${userId}`),
+        ]);
+
+        const registrations = await regRes.json();
+        const myTeams = await teamRes.json();
+
+        let html = "";
+
+        // ── Confirmed Registrations ──
+        if (Array.isArray(registrations) && registrations.length > 0) {
+          html += `<h2 style="font-family: var(--font-display); margin-bottom: 20px; font-size: 1.4rem;">Your Registrations</h2>`;
+          html += '<div class="grid-2" style="margin-bottom: 40px;">';
+
+          registrations.forEach((reg) => {
+            if (!reg.eventId) return;
+
+            const isApproved = reg.approvalStatus === "APPROVED";
+            const statusClass = isApproved ? "badge-approved" : "badge-pending";
+            const statusText = isApproved ? "✓ Approved" : "⏳ Pending";
+            const isTeam = !!reg.teamId;
+            const typeClass = isTeam ? "badge-team" : "badge-solo";
+            const typeText = isTeam ? "👥 Team" : "👤 Solo";
+
+            // Build team members section
+            let teamMembersHTML = "";
+            if (isTeam && reg.teamId && reg.teamId.members) {
+              const members = reg.teamId.members;
+              const leaderId = reg.teamId.leaderId;
+
+              teamMembersHTML = `
+                <button class="team-expand-btn" id="toggle-${reg._id}" onclick="toggleMembers('${reg._id}')">
+                  <span class="arrow">▶</span> Team Members (${members.length})
+                </button>
+                <div class="team-members-panel" id="members-${reg._id}">
+                  ${members.map(m => {
+                    const isLeader = m._id === leaderId;
+                    return `
+                      <div class="member-row">
+                        <div class="member-info">
+                          <div>
+                            <span class="member-name">${m.name}</span>
+                            ${isLeader ? '<span class="member-badge">Leader</span>' : ''}
+                          </div>
+                          <span class="member-email">${m.email}</span>
+                        </div>
+                        ${isApproved
+                          ? `<button onclick="sendTicketToMember('${reg._id}', '${m.email}', this)" class="btn btn-outline-green btn-sm">🎟️ Send Ticket</button>`
+                          : ''
+                        }
+                      </div>
+                    `;
+                  }).join("")}
+                  ${isApproved
+                    ? `<button onclick="downloadTicket('${reg._id}')" class="btn btn-primary btn-sm" style="width:100%; margin-top: 12px;" id="ticketBtn-${reg._id}">📧 Send Tickets to All Members</button>`
+                    : ''
+                  }
+                </div>
+              `;
+            }
+
+            // Build the card
+            let actionHTML = "";
+            if (!isTeam) {
+              // Solo events — single download button
+              actionHTML = isApproved
+                ? `<button onclick="downloadTicket('${reg._id}')" class="btn btn-primary btn-sm" style="width:100%;" id="ticketBtn-${reg._id}">🎟️ Get Ticket (PDF)</button>`
+                : `<div class="notice notice-info" style="margin:0;">Waiting for organizer approval...</div>`;
+            } else {
+              // Team events — show expandable members
+              actionHTML = !isApproved
+                ? `<div class="notice notice-info" style="margin:0;">Waiting for organizer approval...</div>`
+                : '';
+            }
+
+            html += `
+              <div class="card card-green-glow" style="animation: fadeIn 0.5s ease forwards;">
+                <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                  <span class="badge ${typeClass}">${typeText}</span>
+                  ${isTeam && reg.teamId ? `<span class="badge" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-secondary);">${reg.teamId.teamName || 'Team'}</span>` : ''}
+                  <span class="badge ${statusClass}">${statusText}</span>
+                </div>
+                <h3 style="font-family: var(--font-display); margin-bottom: 12px;">${reg.eventId.title}</h3>
+                ${teamMembersHTML}
+                ${actionHTML}
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+
+        // ── Teams in Formation (not yet registered) ──
+        const registeredTeamIds = new Set(
+          (Array.isArray(registrations) ? registrations : [])
+            .filter((r) => r.teamId)
+            .map((r) => r.teamId._id || r.teamId)
+        );
+
+        const pendingTeams = Array.isArray(myTeams)
+          ? myTeams.filter((t) => !registeredTeamIds.has(t._id))
+          : [];
+
+        if (pendingTeams.length > 0) {
+          html += `<h2 style="font-family: var(--font-display); margin-bottom: 20px; font-size: 1.4rem;">Teams in Formation</h2>`;
+          html += '<div class="grid-2" style="margin-bottom: 40px;">';
+
+          pendingTeams.forEach((team) => {
+            const isLeader = team.leaderId === userId;
+            const currentSize = team.members ? team.members.length : 0;
+            const maxSize = team.eventId ? team.eventId.teamSize : 0;
+            const isFull = currentSize >= maxSize;
+            const progressPct = maxSize > 0 ? (currentSize / maxSize * 100) : 0;
+
+            let actionHTML = "";
+            if (isFull && isLeader) {
+              actionHTML = `<button onclick="finalize('${team._id}', '${team.eventId._id}')" class="btn btn-primary btn-sm" style="width:100%;">✅ Finalize Registration</button>`;
+            } else if (isFull) {
+              actionHTML = `<div class="notice notice-success" style="margin:0;">Team full! Waiting for leader to register.</div>`;
+            } else {
+              actionHTML = `<div class="notice notice-info" style="margin:0;">Need ${maxSize - currentSize} more member(s)</div>`;
+            }
+
+            html += `
+              <div class="card" style="border-color: var(--green-border); animation: fadeIn 0.5s ease forwards;">
+                <span class="badge badge-team" style="margin-bottom:12px;">👥 Team Formation</span>
+                <h3 style="font-family: var(--font-display); margin-bottom: 8px;">${team.eventId ? team.eventId.title : "Unknown Event"}</h3>
+                <div style="margin-bottom: 16px;">
+                  <div style="display:flex; justify-content:space-between; font-size:0.9rem; color: var(--text-secondary); margin-bottom: 4px;">
+                    <span>Team Code: <span class="team-code">${team.teamCode}</span></span>
+                    <span>${currentSize}/${maxSize}</span>
+                  </div>
+                  <div class="progress-bar-wrapper">
+                    <div class="progress-bar-fill" style="width: ${progressPct}%;"></div>
+                  </div>
+                </div>
+                ${actionHTML}
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+
+        if (!html) {
+          html = `<div class="empty-state">
+            <div class="empty-icon">🎪</div>
+            <p>You haven't joined any events yet.</p>
+            <a href="events.html" class="btn btn-primary" style="margin-top: 20px;">Browse Events →</a>
+          </div>`;
+        }
+
+        container.innerHTML = html;
+
+      } catch (err) {
+        console.error("Dashboard Error:", err);
+        document.getElementById("dashboardContent").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load dashboard. Please try again.</p></div>';
+      }
+    }
+
+    async function finalize(teamId, eventId) {
+      if (!confirm("Are you sure your team is ready? This will submit your registration for approval.")) return;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/registration/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, teamId, eventId }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert("Team Registration Submitted! Waiting for Admin Approval.");
+          location.reload();
+        } else {
+          alert("Error: " + data.message);
+        }
+      } catch (err) {
+        alert("Server connection failed.");
+      }
+    }
+
+    async function downloadTicket(regId) {
+      const btn = document.getElementById(`ticketBtn-${regId}`);
+      if (!btn) return;
+      const originalText = btn.innerText;
+      btn.innerText = "⏳ Sending to all members...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/ticket/download/${regId}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          btn.innerText = "✅ Tickets Sent!";
+          btn.className = "btn btn-secondary btn-sm";
+          btn.style.width = "100%";
+          alert(data.message || "Tickets sent to all team members!");
+        } else {
+          alert("Error: " + data.message);
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Failed to connect to ticket service.");
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function sendTicketToMember(regId, email, btn) {
+      const originalText = btn.innerText;
+      btn.innerText = "⏳ Sending...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/ticket/download/${regId}?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          btn.innerText = "✅ Sent!";
+          btn.className = "btn btn-secondary btn-sm";
+        } else {
+          alert("Error: " + data.message);
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert("Failed to send ticket.");
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    loadMyEvents();
+  </script>
+</body>
+</html>

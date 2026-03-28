@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-glow"></div>
+    <div class="auth-card fade-in">
+      <div style="text-align:center; margin-bottom: 24px;">
+        <a href="index.html" class="navbar-brand" style="justify-content:center; font-size:1.6rem;">⚡ Event<span>Hub</span></a>
+      </div>
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Login to access your events and tickets</p>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" class="form-input" placeholder="you@college.edu">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="Enter your password">
+      </div>
+
+      <button onclick="login()" class="btn btn-primary btn-block btn-lg" id="loginBtn">Login →</button>
+
+      <p id="msg" class="msg"></p>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    gsap.from(".auth-card", { opacity: 0, y: 40, duration: 0.8, ease: "power3.out" });
+
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("loginBtn");
+
+      btn.textContent = "Logging in...";
+      btn.disabled = true;
+
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      document.getElementById("msg").innerText = data.message;
+
+      if (res.ok && data.message.includes("Login successful")) {
+        localStorage.setItem("userId", data.user._id);
+
+        if (data.user.role === "admin") {
+          window.location.href = "admin-dashboard.html";
+          return;
+        }
+
+        window.location.href = "events.html";
+      } else {
+        document.getElementById("msg").className = "msg msg-error";
+        btn.textContent = "Login →";
+        btn.disabled = false;
+      }
+    }
+
+    // Enter key support
+    document.getElementById("password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") login();
+    });
+  </script>
+</body>
+</html>

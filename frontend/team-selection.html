@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Registration — EventHub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <div class="navbar-links">
+        <a href="events.html">← Back to Events</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <div class="page-header-glow"></div>
+      <div class="container">
+        <h1>Team <span class="highlight">Registration</span></h1>
+        <p>Create a new team or join an existing one</p>
+      </div>
+    </div>
+
+    <div class="container" style="max-width: 800px; padding-bottom: 80px;">
+      <div class="team-options">
+        <!-- Create Team -->
+        <div class="team-option-card fade-in stagger-1">
+          <div class="option-icon">🚀</div>
+          <h3>Start a New Team</h3>
+          <p>You'll be the team leader. Share the code with your members.</p>
+          <div class="form-group" style="margin-top: 16px;">
+            <input type="text" id="teamName" class="form-input" placeholder="Enter team name">
+          </div>
+          <button onclick="createNewTeam()" class="btn btn-primary btn-block">Create Team</button>
+        </div>
+
+        <!-- Join Team -->
+        <div class="team-option-card fade-in stagger-2">
+          <div class="option-icon">🤝</div>
+          <h3>Join Existing Team</h3>
+          <p>Enter the 6-character code from your team leader.</p>
+          <div class="form-group" style="margin-top: 16px;">
+            <input type="text" id="joinCode" class="form-input" placeholder="e.g. x8j2k1" maxlength="6"
+              style="text-align:center; font-family:'Space Grotesk',monospace; font-size:1.2rem; letter-spacing:0.15em;">
+          </div>
+          <button onclick="joinWithCode()" class="btn btn-outline-green btn-block">Join Team</button>
+        </div>
+      </div>
+
+      <p id="errorMsg" class="msg msg-error" style="text-align:center; margin-top:20px;"></p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    const userId = localStorage.getItem("userId");
+    const eventId = localStorage.getItem("selectedEventId");
+    if (!userId || !eventId) window.location.href = "events.html";
+
+    gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
+    gsap.from(".team-option-card", { opacity: 0, y: 50, duration: 0.7, stagger: 0.15, ease: "power3.out", delay: 0.2 });
+
+    async function createNewTeam() {
+      const teamName = document.getElementById("teamName").value;
+      if (!teamName) return alert("Team Name is required");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/team/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamName, leaderId: userId, eventId }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(`Team Created! Your join code: ${data.team.teamCode}`);
+          window.location.href = "my-events.html";
+        } else {
+          document.getElementById("errorMsg").innerText = data.message;
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("errorMsg").innerText = "Server error";
+      }
+    }
+
+    async function joinWithCode() {
+      const teamCode = document.getElementById("joinCode").value;
+      if (!teamCode) return alert("Enter the team code");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/team/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamCode, userId }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Joined Team Successfully!");
+          window.location.href = "my-events.html";
+        } else {
+          document.getElementById("errorMsg").innerText = data.message;
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("errorMsg").innerText = "Server error";
+      }
+    }
+
+    // Check if already in a team for this event
+    async function checkExistingTeam() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/team/user/${userId}`);
+        const myTeams = await res.json();
+        const currentTeam = myTeams.find((t) => t.eventId._id === eventId || t.eventId === eventId);
+
+        if (currentTeam) {
+          alert("You are already in a team for this event!");
+          window.location.href = "my-events.html";
+        }
+      } catch (err) {
+        console.error("Error checking team status:", err);
+      }
+    }
+
+    checkExistingTeam();
+  </script>
+</body>
+</html>
