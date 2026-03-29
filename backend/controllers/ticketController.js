@@ -213,3 +213,69 @@ export const downloadTicket = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+// // 🔹 DIRECT DOWNLOAD CONTROLLER — returns a PDF directly
+// export const directDownloadTicket = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const registration = await Registration.findById(id);
+//     if (!registration || registration.approvalStatus !== "APPROVED") {
+//       return res.status(400).json({ message: "Ticket not approved or available" });
+//     }
+//     const event = await Event.findById(registration.eventId);
+//     if (!event) return res.status(404).json({ message: "Event not found" });
+//     let users = [];
+//     if (registration.userId && !registration.teamId) {
+//       const singleUser = await User.findById(registration.userId);
+//       if (singleUser) users.push(singleUser);
+//     } else if (registration.teamId) {
+//       const team = await Team.findById(registration.teamId).populate("members");
+//       if (team) users = team.members;
+//     }
+//     if (users.length === 0) {
+//       return res.status(400).json({ message: "No users associated with this registration" });
+//     }
+//     const targetEmail = req.query.email;
+//     if (targetEmail) {
+//       const targetUser = users.find(u => u.email === targetEmail);
+//       if (!targetUser) {
+//         return res.status(404).json({ message: "Member not found in this registration" });
+//       }
+//       users = [targetUser];
+//     }
+//     const user = users[0];
+//     const qrData = `${registration._id}-${user._id}`;
+//     const qrCodeBuffer = await QRCode.toBuffer(qrData);
+//     const data = {
+//       eventTitle: event.title,
+//       userName: user.name,
+//       venue: event.venue,
+//       date: event.date,
+//       category: event.category,
+//       startTime: event.startTime,
+//       endTime: event.endTime,
+//       contactEmail: event.contactEmail,
+//       rules: event.rules,
+//       qrCodeBuffer: qrCodeBuffer,
+//     };
+//     const pdfBuffer = await generatePDFBuffer(data);
+//     res.set({
+//       'Content-Type': 'application/pdf',
+//       'Content-Disposition': `attachment; filename="Ticket-${event.title.replace(/\s+/g, '-')}-${user.name.replace(/\s+/g, '-')}.pdf"`,
+//     });
+    
+//     res.send(pdfBuffer);
+//   } catch (error) {
+//     console.error("Direct Download Ticket Error:", error);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+// import express from "express";
+// import { downloadTicket } from "../controllers/ticketController.js";
+// import { downloadTicket, directDownloadTicket } from "../controllers/ticketController.js";
+// const router = express.Router();
+// router.get("/download/:id", downloadTicket);
+// router.get("/direct/:id", directDownloadTicket);
+// export default router;
