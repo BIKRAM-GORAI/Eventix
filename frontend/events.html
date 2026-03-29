@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Explore Events — EventHub</title>
+  <title>Explore Events — Eventix</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Navbar -->
   <nav class="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <a href="index.html" class="navbar-brand">⚡ <span>Eventix</span></a>
       <div class="navbar-links">
         <a href="events.html" style="color: var(--green-primary);">Explore</a>
         <a href="my-events.html">My Events</a>
+        <div class="user-profile-pill" id="userProfilePill">
+          <span class="user-avatar-icon">👤</span>
+          <span class="user-display-name" id="navUserName">Student</span>
+        </div>
         <button onclick="logout()" class="btn btn-ghost btn-sm" style="color: var(--red-accent);">Logout</button>
       </div>
     </div>
@@ -46,6 +49,12 @@
   <script>
     const userId = localStorage.getItem("userId");
     if (!userId) window.location.href = "login.html";
+
+    // Display username in navbar
+    const userName = localStorage.getItem("userName");
+    if (userName) {
+      document.getElementById("navUserName").textContent = userName;
+    }
 
     function logout() {
       localStorage.clear();

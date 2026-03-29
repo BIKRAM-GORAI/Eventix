@@ -1354,3 +1354,40 @@ select.form-input {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── User Profile Pill (Navbar) ── */
+.user-profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid var(--green-border);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  cursor: default;
+  max-width: 180px;
+}
+
+.user-profile-pill:hover {
+  background: rgba(0, 255, 65, 0.09);
+  border-color: rgba(0, 255, 65, 0.25);
+  color: var(--text-primary);
+}
+
+.user-avatar-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.user-display-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--green-primary);
+  font-weight: 600;
+}

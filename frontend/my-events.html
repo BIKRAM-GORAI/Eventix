@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Events — EventHub</title>
+  <title>My Events — Eventix</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .team-expand-btn {
@@ -76,10 +76,14 @@
 
   <nav class="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="navbar-brand">⚡ Event<span>Hub</span></a>
+      <a href="index.html" class="navbar-brand">⚡ <span>Eventix</span></a>
       <div class="navbar-links">
         <a href="events.html">Explore</a>
         <a href="my-events.html" style="color: var(--green-primary);">My Events</a>
+        <div class="user-profile-pill" id="userProfilePill">
+          <span class="user-avatar-icon">👤</span>
+          <span class="user-display-name" id="navUserName">Student</span>
+        </div>
         <button onclick="localStorage.clear(); window.location.href='login.html'" class="btn btn-ghost btn-sm" style="color: var(--red-accent);">Logout</button>
       </div>
     </div>
@@ -108,6 +112,12 @@
   <script>
     const userId = localStorage.getItem("userId");
     if (!userId) window.location.href = "login.html";
+
+    // Display username in navbar
+    const userName = localStorage.getItem("userName");
+    if (userName) {
+      document.getElementById("navUserName").textContent = userName;
+    }
 
     gsap.from(".page-header h1", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" });
     gsap.from(".page-header p", { opacity: 0, y: 20, duration: 0.6, delay: 0.2, ease: "power3.out" });
