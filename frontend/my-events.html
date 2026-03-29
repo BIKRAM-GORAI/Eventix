@@ -169,12 +169,12 @@
                             <span class="member-name">${m.name}</span>
                             ${isLeader ? '<span class="member-badge">Leader</span>' : ''}
                           </div>
+                          ${isApproved
+                            ? `<button onclick="sendTicketToMember('${reg._id}', '${m.email}', this)" class="btn btn-outline-green btn-sm">🎟️ Send Ticket</button>`
+                            : ''
+                          }
                           <span class="member-email">${m.email}</span>
                         </div>
-                        ${isApproved
-                          ? `<button onclick="sendTicketToMember('${reg._id}', '${m.email}', this)" class="btn btn-outline-green btn-sm">🎟️ Send Ticket</button>`
-                          : ''
-                        }
                       </div>
                     `;
                   }).join("")}
@@ -186,7 +186,7 @@
               `;
             }
 
-            // Build the card
+            // Build the cards
             let actionHTML = "";
             if (!isTeam) {
               // Solo events — single download button

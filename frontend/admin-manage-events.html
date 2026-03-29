@@ -1,86 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manage Events — EventHub Admin</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
   <style>
     /* ── Manage Events styles ── */
+    .page-header {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-header-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(0,255,65,0.12), transparent 55%);
+      pointer-events: none;
+      filter: blur(8px);
+    }
+
     .manage-card {
-      background: var(--bg-card);
+      background: linear-gradient(180deg, rgba(20,20,20,0.96), rgba(14,14,14,0.96));
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       overflow: hidden;
-      transition: all var(--transition-base);
+      transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
       cursor: pointer;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      min-height: 260px;
     }
-    .manage-card:hover { border-color: var(--green-border); box-shadow: var(--shadow-green); }
+
+    .manage-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--green-border);
+      box-shadow: var(--shadow-green);
+      background: linear-gradient(180deg, rgba(24,24,24,0.98), rgba(14,14,14,0.98));
+    }
 
     .manage-card-top {
-      height: 80px;
-      background: linear-gradient(135deg, rgba(0,255,65,0.12) 0%, rgba(0,153,26,0.06) 50%, transparent 100%);
+      min-height: 92px;
+      background: linear-gradient(135deg, rgba(0,255,65,0.10) 0%, rgba(0,153,26,0.05) 55%, transparent 100%);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .manage-card-top h3 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      line-height: 1.2;
+      margin-top: 6px;
+      word-break: break-word;
+    }
+
+    .manage-card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .manage-card-body {
+      padding: 16px 20px 18px;
+    }
+
+    .manage-card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .manage-card-meta span {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
+      gap: 8px;
+      word-break: break-word;
     }
-    .manage-card-top h3 { font-family: var(--font-display); font-size: 1.15rem; }
-    .manage-card-body { padding: 16px 20px; }
-    .manage-card-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; }
-    .manage-card-actions { display: flex; gap: 8px; }
-    .edit-btn { z-index: 2; position: relative; }
+
+    .edit-btn,
+    .card-action-btn {
+      z-index: 2;
+      position: relative;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 10px 14px;
+      min-height: 38px;
+      transition: transform var(--transition-base), opacity var(--transition-base), box-shadow var(--transition-base);
+    }
+
+    .card-action-btn:hover,
+    .edit-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .card-action-btn:active,
+    .edit-btn:active {
+      transform: translateY(0px) scale(0.99);
+    }
+
+    .btn-action-green {
+      border-color: rgba(0,255,65,0.35);
+      color: var(--green-primary);
+      background: rgba(0,255,65,0.06);
+    }
+
+    .btn-action-red {
+      border-color: rgba(255,77,77,0.45);
+      color: var(--red-accent);
+      background: rgba(255,77,77,0.06);
+    }
+
+    .btn-action-orange {
+      border-color: rgba(255,165,0,0.35);
+      color: var(--orange-accent);
+      background: rgba(255,165,0,0.06);
+    }
+
+    .btn-action-green:hover,
+    .btn-action-red:hover,
+    .btn-action-orange:hover {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 10px 18px rgba(0,0,0,0.18);
+    }
+
+    .card-action-icon {
+      margin-right: 6px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .badge-row .badge {
+      line-height: 1;
+    }
 
     /* Modal overlay */
     .modal-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: flex-start;
-      padding: 40px 20px; overflow-y: auto;
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      overflow-y: auto;
     }
     .modal-overlay.active { display: flex; }
+
     .modal-card {
-      background: var(--bg-secondary); border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl); padding: 32px; width: 100%; max-width: 640px;
-      position: relative; max-height: 90vh; overflow-y: auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      width: 100%;
+      max-width: 640px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
     }
-    .modal-card h2 { font-family: var(--font-display); margin-bottom: 24px; font-size: 1.5rem; }
+
+    .modal-card h2 {
+      font-family: var(--font-display);
+      margin-bottom: 24px;
+      font-size: 1.5rem;
+    }
+
     .modal-close {
-      position: absolute; top: 16px; right: 20px; background: none; border: none;
-      color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; z-index: 10;
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      z-index: 10;
+      transition: color var(--transition-base), transform var(--transition-base);
     }
-    .modal-close:hover { color: var(--text-primary); }
+    .modal-close:hover { color: var(--text-primary); transform: scale(1.05); }
 
     /* Participant panel */
     .participant-panel { margin-top: 24px; }
-    .participant-panel h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px; }
+    .participant-panel h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
 
     .solo-row, .team-member-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm); margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      transition: border-color var(--transition-base), transform var(--transition-base);
     }
-    .solo-row:hover, .team-member-row:hover { border-color: var(--border-hover); }
+    .solo-row:hover, .team-member-row:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
     .p-name { font-weight: 600; font-size: 0.95rem; }
-    .p-email { font-size: 0.8rem; color: var(--text-muted); }
+    .p-email { font-size: 0.8rem; color: var(--text-muted); word-break: break-word; }
     .p-college { font-size: 0.8rem; color: var(--text-secondary); }
 
     .team-box {
-      background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      overflow: hidden;
     }
+
     .team-box-header {
-      padding: 12px 16px; background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, transparent 60%);
-      border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, transparent 60%);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    .team-box-header h4 { font-family: var(--font-display); font-size: 1rem; }
+
+    .team-box-header h4 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      word-break: break-word;
+    }
+
     .team-box-body { padding: 12px; }
 
     /* Notify form */
     .notify-section {
-      background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg); padding: 20px; margin-top: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-top: 24px;
     }
-    .notify-section h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px; display:flex; align-items:center; gap:8px; }
+
+    .notify-section h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Small responsiveness */
+    @media (max-width: 900px) {
+      .manage-card-top {
+        flex-direction: column;
+      }
+
+      .manage-card-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .modal-card {
+        padding: 22px 18px;
+      }
+
+      .solo-row, .team-member-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .solo-row button, .team-member-row button, .team-box-header button {
+        width: 100%;
+      }
+
+      .manage-card-top h3 {
+        font-size: 1.05rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -105,7 +324,10 @@
 
     <div class="container" style="padding-bottom: 80px;">
       <div id="eventGrid" class="grid-3">
-        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading events...</p></div>
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading events...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -113,18 +335,22 @@
   <!-- Edit Modal -->
   <div class="modal-overlay" id="editModal">
     <div class="modal-card">
-      <button class="modal-close" onclick="closeEdit()">✕</button>
+      <button class="modal-close" type="button" onclick="closeEdit()">✕</button>
       <h2>✏️ Edit Event</h2>
       <form id="editForm">
-        <input type="hidden" id="editEventId">
+        <input type="hidden" id="editEventId" />
         <div class="form-group"><label>Title</label><input type="text" id="editTitle" class="form-input" required></div>
         <div class="form-group"><label>Description</label><textarea id="editDesc" class="form-input" rows="3"></textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>Category</label>
+          <div class="form-group">
+            <label>Category</label>
             <select id="editCategory" class="form-input">
-              <option value="Other">Other</option><option value="Hackathon">Hackathon</option>
-              <option value="Workshop">Workshop</option><option value="Cultural">Cultural</option>
-              <option value="Sports">Sports</option><option value="Seminar">Seminar</option>
+              <option value="Other">Other</option>
+              <option value="Hackathon">Hackathon</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Cultural">Cultural</option>
+              <option value="Sports">Sports</option>
+              <option value="Seminar">Seminar</option>
               <option value="Competition">Competition</option>
             </select>
           </div>
@@ -144,8 +370,12 @@
         </div>
         <div class="form-group"><label>Rules</label><textarea id="editRules" class="form-input" rows="2"></textarea></div>
         <div class="form-row">
-          <div class="form-group"><label>Team Event?</label>
-            <select id="editIsTeam" class="form-input"><option value="false">No</option><option value="true">Yes</option></select>
+          <div class="form-group">
+            <label>Team Event?</label>
+            <select id="editIsTeam" class="form-input">
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </select>
           </div>
           <div class="form-group"><label>Team Size</label><input type="number" id="editTeamSize" class="form-input" min="1" value="1"></div>
         </div>
@@ -159,19 +389,28 @@
   <!-- Participants Modal -->
   <div class="modal-overlay" id="participantsModal">
     <div class="modal-card" style="max-width: 720px;">
-      <button class="modal-close" onclick="closeParticipants()">✕</button>
+      <button class="modal-close" type="button" onclick="closeParticipants()">✕</button>
       <h2 id="pModalTitle">Participants</h2>
       <div id="participantContent">
-        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading...</p>
+        </div>
       </div>
 
       <!-- Notify Section -->
       <div class="notify-section">
         <h3>📧 Send Notification</h3>
-        <div class="form-group"><label>Subject</label><input type="text" id="notifySubject" class="form-input" placeholder="Important update about the event"></div>
-        <div class="form-group"><label>Message (HTML supported)</label><textarea id="notifyBody" class="form-input" rows="4" placeholder="<h3>Hello!</h3><p>Your message here...</p>"></textarea></div>
-        <div class="btn-group" style="justify-content: flex-start;">
-          <button onclick="sendNotifyAll()" class="btn btn-primary btn-sm" id="notifyAllBtn">📧 Send to All Participants</button>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="notifySubject" class="form-input" placeholder="Important update about the event">
+        </div>
+        <div class="form-group">
+          <label>Message (HTML supported)</label>
+          <textarea id="notifyBody" class="form-input" rows="4" placeholder="<h3>Hello!</h3><p>Your message here...</p>"></textarea>
+        </div>
+        <div class="btn-group" style="justify-content: flex-start; gap: 10px; flex-wrap: wrap;">
+          <button type="button" onclick="sendNotifyAll()" class="btn btn-primary btn-sm" id="notifyAllBtn">📧 Send to All Participants</button>
         </div>
         <p id="notifyMsg" class="msg"></p>
       </div>
@@ -191,57 +430,80 @@
         const events = await res.json();
         const grid = document.getElementById("eventGrid");
 
-        if (!events.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No events yet.</p></div>'; return; }
+        if (!events.length) {
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No events yet.</p></div>';
+          return;
+        }
 
         grid.innerHTML = "";
         events.forEach((event, i) => {
-          const dateStr = new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+          const dateStr = new Date(event.date).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          });
+
           const card = document.createElement("div");
           card.className = "manage-card";
           card.style.opacity = "0";
+          card.style.transform = "translateY(12px)";
+
           card.onclick = (e) => {
-            if (!e.target.closest(".edit-btn")) openParticipants(event._id, event.title);
+            if (!e.target.closest(".edit-btn") && !e.target.closest(".card-action-btn")) {
+              openParticipants(event._id, event.title);
+            }
           };
 
           const catBadge = event.category && event.category !== "Other"
-            ? `<span class="badge" style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); color:var(--purple-accent); font-size:0.7rem;">${event.category}</span>` : '';
+            ? `<span class="badge" style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); color:var(--purple-accent); font-size:0.7rem;">${event.category}</span>`
+            : "";
+
           const typeBadge = event.isTeamEvent
             ? `<span class="badge badge-team" style="font-size:0.7rem;">Team (${event.teamSize})</span>`
-            : '<span class="badge badge-solo" style="font-size:0.7rem;">Solo</span>';
+            : `<span class="badge badge-solo" style="font-size:0.7rem;">Solo</span>`;
+
           const statusBadge = event.isConcluded
-            ? '<span class="badge badge-approved" style="font-size:0.7rem;">Concluded</span>'
-            : '<span class="badge badge-pending" style="font-size:0.7rem;">Active</span>';
-          
+            ? `<span class="badge badge-approved" style="font-size:0.7rem;">Concluded</span>`
+            : `<span class="badge badge-pending" style="font-size:0.7rem;">Active</span>`;
+
           const concludeAction = event.isConcluded
-            ? `<button class="btn btn-outline-green btn-sm edit-btn" style="border-color:var(--orange-accent); color:var(--orange-accent);" onclick="toggleConclude('${event._id}', false)">🔄 Reopen</button>`
-            : `<button class="btn btn-outline-green btn-sm edit-btn" style="border-color:var(--red-accent); color:var(--red-accent);" onclick="toggleConclude('${event._id}', true)">🏁 Conclude</button>`;
+            ? `<button type="button" class="btn btn-sm card-action-btn btn-action-orange" onclick="event.stopPropagation(); toggleConclude('${event._id}', false)">🔄 Reopen</button>`
+            : `<button type="button" class="btn btn-sm card-action-btn btn-action-red" onclick="event.stopPropagation(); toggleConclude('${event._id}', true)">🏁 Conclude</button>`;
 
           card.innerHTML = `
             <div class="manage-card-top">
               <div>
-                <div style="display:flex; gap:6px; margin-bottom:4px;">${catBadge} ${typeBadge} ${statusBadge}</div>
+                <div class="badge-row">${catBadge}${typeBadge}${statusBadge}</div>
                 <h3>${event.title}</h3>
               </div>
-              <div style="display:flex; gap:8px;">
+              <div class="manage-card-actions">
                 ${concludeAction}
-                <button class="btn btn-outline-green btn-sm edit-btn" onclick="openEdit('${event._id}')">✏️ Edit</button>
+                <button type="button" class="btn btn-sm card-action-btn btn-action-green edit-btn" onclick="event.stopPropagation(); openEdit('${event._id}')">✏️ Edit</button>
               </div>
             </div>
             <div class="manage-card-body">
               <div class="manage-card-meta">
-                <span>📅 ${dateStr}${event.startTime ? ' · ' + event.startTime : ''}</span>
+                <span>📅 ${dateStr}${event.startTime ? " · " + event.startTime : ""}</span>
                 <span>📍 ${event.venue}</span>
-                <span>${event.price > 0 ? '💰 ₹' + event.price : '🆓 Free'}</span>
+                <span>${event.price > 0 ? "💰 ₹" + event.price : "🆓 Free"}</span>
               </div>
-              <p style="font-size:0.8rem; color:var(--text-muted);">Click to view participants & send emails</p>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Click card to view participants & send emails</p>
             </div>
           `;
+
           grid.appendChild(card);
-          gsap.to(card, { opacity: 1, duration: 0.5, delay: i * 0.06, ease: "power3.out" });
+          gsap.to(card, {
+            opacity: 1,
+            y: 0,
+            duration: 0.45,
+            delay: i * 0.06,
+            ease: "power3.out"
+          });
         });
       } catch (err) {
         console.error(err);
-        document.getElementById("eventGrid").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load events</p></div>';
+        document.getElementById("eventGrid").innerHTML =
+          '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load events</p></div>';
       }
     }
 
@@ -249,12 +511,13 @@
     async function toggleConclude(eventId, willConclude) {
       const action = willConclude ? "conclude" : "reopen";
       if (!confirm(`Are you sure you want to ${action} this event?`)) return;
-      
+
       try {
         const res = await fetch(`http://localhost:5000/api/events/${eventId}/${action}`, {
           method: "PUT"
         });
         const data = await res.json();
+
         if (res.ok) {
           loadEvents();
         } else {
@@ -290,19 +553,24 @@
         document.getElementById("editMsg").innerText = "";
 
         document.getElementById("editModal").classList.add("active");
-        gsap.from(".modal-card", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" });
+        gsap.from("#editModal .modal-card", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" });
       } catch (err) {
         alert("Failed to load event details");
       }
     }
 
-    function closeEdit() { document.getElementById("editModal").classList.remove("active"); }
+    function closeEdit() {
+      document.getElementById("editModal").classList.remove("active");
+    }
 
     document.getElementById("editForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = document.getElementById("editMsg");
       const btn = e.target.querySelector("button[type=submit]");
-      btn.textContent = "⏳ Saving..."; btn.disabled = true;
+      const oldText = btn.textContent;
+
+      btn.textContent = "⏳ Saving...";
+      btn.disabled = true;
 
       const payload = {
         title: document.getElementById("editTitle").value,
@@ -318,29 +586,45 @@
         rules: document.getElementById("editRules").value,
         isTeamEvent: document.getElementById("editIsTeam").value === "true",
         teamSize: Number(document.getElementById("editTeamSize").value),
-        maxParticipants: document.getElementById("editMaxPart").value ? Number(document.getElementById("editMaxPart").value) : undefined
+        maxParticipants: document.getElementById("editMaxPart").value
+          ? Number(document.getElementById("editMaxPart").value)
+          : undefined
       };
 
       try {
         const res = await fetch(`http://localhost:5000/api/events/${document.getElementById("editEventId").value}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
+
         if (res.ok) {
-          msg.innerText = "✅ Event updated!"; msg.className = "msg msg-success";
-          setTimeout(() => { closeEdit(); loadEvents(); }, 1000);
+          msg.innerText = "✅ Event updated!";
+          msg.className = "msg msg-success";
+          setTimeout(() => {
+            closeEdit();
+            loadEvents();
+          }, 1000);
         } else {
-          msg.innerText = data.message; msg.className = "msg msg-error";
+          msg.innerText = data.message || "Failed to update event";
+          msg.className = "msg msg-error";
         }
-      } catch (err) { msg.innerText = "Server error"; msg.className = "msg msg-error"; }
-      btn.textContent = "💾 Save Changes"; btn.disabled = false;
+      } catch (err) {
+        msg.innerText = "Server error";
+        msg.className = "msg msg-error";
+      }
+
+      btn.textContent = oldText;
+      btn.disabled = false;
     });
 
     // ── PARTICIPANTS ──
     async function openParticipants(eventId, title) {
       currentEventId = eventId;
       document.getElementById("pModalTitle").textContent = `👥 ${title} — Participants`;
-      document.getElementById("participantContent").innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading participants...</p></div>';
+      document.getElementById("participantContent").innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading participants...</p></div>';
       document.getElementById("notifyMsg").innerText = "";
       document.getElementById("participantsModal").classList.add("active");
       gsap.from("#participantsModal .modal-card", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" });
@@ -367,11 +651,11 @@
                   <div class="p-email">${p.email}</div>
                   ${p.college ? `<div class="p-college">🏫 ${p.college}</div>` : ''}
                 </div>
-                <button onclick="sendMailTo(['${p.email}'], this)" class="btn btn-outline-green btn-sm">📧 Mail</button>
+                <button type="button" onclick="event.stopPropagation(); sendMailTo(['${p.email}'], this)" class="btn btn-outline-green btn-sm">📧 Mail</button>
               </div>
             `;
           });
-          html += '</div>';
+          html += `</div>`;
         }
 
         // Teams
@@ -383,7 +667,7 @@
               <div class="team-box">
                 <div class="team-box-header">
                   <h4>🏷️ ${team.teamName}</h4>
-                  <button onclick="sendMailTo([${allEmails}], this)" class="btn btn-outline-green btn-sm">📧 Mail Team</button>
+                  <button type="button" onclick="event.stopPropagation(); sendMailTo([${allEmails}], this)" class="btn btn-outline-green btn-sm">📧 Mail Team</button>
                 </div>
                 <div class="team-box-body">
                   ${team.members.map(m => `
@@ -393,24 +677,27 @@
                         <div class="p-email">${m.email}</div>
                         ${m.college ? `<div class="p-college">🏫 ${m.college}</div>` : ''}
                       </div>
-                      <button onclick="sendMailTo(['${m.email}'], this)" class="btn btn-ghost btn-sm" style="color:var(--green-primary);">📧</button>
+                      <button type="button" onclick="event.stopPropagation(); sendMailTo(['${m.email}'], this)" class="btn btn-ghost btn-sm" style="color:var(--green-primary);">📧</button>
                     </div>
                   `).join("")}
                 </div>
               </div>
             `;
           });
-          html += '</div>';
+          html += `</div>`;
         }
 
         container.innerHTML = html;
       } catch (err) {
         console.error(err);
-        document.getElementById("participantContent").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load participants</p></div>';
+        document.getElementById("participantContent").innerHTML =
+          '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load participants</p></div>';
       }
     }
 
-    function closeParticipants() { document.getElementById("participantsModal").classList.remove("active"); }
+    function closeParticipants() {
+      document.getElementById("participantsModal").classList.remove("active");
+    }
 
     // Send mail to specific email(s) using the notify form
     async function sendMailTo(emails, btn) {
@@ -424,19 +711,25 @@
       }
 
       const orig = btn.innerText;
-      btn.innerText = "⏳"; btn.disabled = true;
+      btn.innerText = "⏳";
+      btn.disabled = true;
 
       try {
         const res = await fetch(`http://localhost:5000/api/events/${currentEventId}/notify`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subject, body, targetEmails: emails })
         });
-        const data = await res.json();
+        await res.json();
         btn.innerText = "✅ Sent";
-        setTimeout(() => { btn.innerText = orig; btn.disabled = false; }, 2000);
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.disabled = false;
+        }, 2000);
       } catch (err) {
         alert("Failed to send email");
-        btn.innerText = orig; btn.disabled = false;
+        btn.innerText = orig;
+        btn.disabled = false;
       }
     }
 
@@ -446,28 +739,50 @@
       const body = document.getElementById("notifyBody").value;
       const msg = document.getElementById("notifyMsg");
       const btn = document.getElementById("notifyAllBtn");
+      const oldText = btn.innerText;
 
-      if (!subject || !body) { msg.innerText = "Subject and message are required"; msg.className = "msg msg-error"; return; }
+      if (!subject || !body) {
+        msg.innerText = "Subject and message are required";
+        msg.className = "msg msg-error";
+        return;
+      }
 
-      btn.innerText = "⏳ Sending..."; btn.disabled = true;
+      btn.innerText = "⏳ Sending...";
+      btn.disabled = true;
 
       try {
         const res = await fetch(`http://localhost:5000/api/events/${currentEventId}/notify`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subject, body })
         });
         const data = await res.json();
-        msg.innerText = "✅ " + data.message; msg.className = "msg msg-success";
-        btn.innerText = "📧 Send to All Participants"; btn.disabled = false;
+        msg.innerText = "✅ " + (data.message || "Notification sent");
+        msg.className = "msg msg-success";
       } catch (err) {
-        msg.innerText = "Server error"; msg.className = "msg msg-error";
-        btn.innerText = "📧 Send to All Participants"; btn.disabled = false;
+        msg.innerText = "Server error";
+        msg.className = "msg msg-error";
       }
+
+      btn.innerText = oldText;
+      btn.disabled = false;
     }
 
     // Close modals on ESC
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { closeEdit(); closeParticipants(); }
+      if (e.key === "Escape") {
+        closeEdit();
+        closeParticipants();
+      }
+    });
+
+    // Optional: click outside modal card closes it
+    document.getElementById("editModal").addEventListener("click", (e) => {
+      if (e.target.id === "editModal") closeEdit();
+    });
+
+    document.getElementById("participantsModal").addEventListener("click", (e) => {
+      if (e.target.id === "participantsModal") closeParticipants();
     });
 
     loadEvents();
