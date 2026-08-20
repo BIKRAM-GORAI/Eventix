@@ -1,6 +1,19 @@
 # 🎟️ Eventix - Event Management & Automated Ticketing Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Eventix%20on%20Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://eventix-olive.vercel.app/)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=for-the-badge)](https://opensource.org/licenses/ISC)
+
 **Eventix** is a full-stack, multi-role event management, ticketing, and attendance system designed for universities, colleges, and event organizations. It seamlessly bridges event discovery, team formation, automated PDF ticket generation with unique QR codes, real-time ticket scanning, payment analytics, and administrator approval workflows.
+
+🌐 **Live Website**: [https://eventix-olive.vercel.app/](https://eventix-olive.vercel.app/)
+
+---
+
+## 📸 Application Screenshots
+
+| Eventix Landing & Discovery | Event Management & Portal Interface |
+| :---: | :---: |
+| ![Eventix Interface 1](assets/1.png) | ![Eventix Interface 2](assets/2.png) |
 
 ---
 
@@ -64,6 +77,9 @@
 
 ```
 Eventix/
+├── assets/                    # Project screenshots & visual assets
+│   ├── 1.png
+│   └── 2.png
 ├── backend/
 │   ├── config/
 │   │   ├── cloudinary.js      # Cloudinary service setup
@@ -114,6 +130,8 @@ Eventix/
 │   ├── my-events.html         # User registered events & tickets
 │   └── team.html              # Team workspace & member management
 ├── .gitignore                 # Git ignore rules
+├── package.json               # Root scripts for easy startup
+├── vercel.json                # Vercel deployment routing configuration
 └── README.md                  # Project documentation
 ```
 
