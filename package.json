@@ -1,0 +1,11 @@
+{
+  "name": "eventix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Eventix - Event Management & Automated Ticketing Platform",
+  "scripts": {
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "install-all": "npm install --prefix backend"
+  }
+}
